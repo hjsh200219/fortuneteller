@@ -1,0 +1,56 @@
+# 의존성
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# 빌드 출력
+dist/
+build/
+*.tsbuildinfo
+
+# 환경 변수
+.env
+.env.local
+.env.*.local
+
+# 로그
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# 운영 체제
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# 테스트 커버리지
+coverage/
+*.lcov
+.nyc_output/
+
+# 임시 파일
+*.tmp
+*.temp
+.cache/
+
+# MCP 관련
+.mcp/
+
