@@ -146,3 +146,79 @@ export function analyzeWuXingBalance(counts: Record<WuXing, number>): {
   };
 }
 
+/**
+ * 두 오행 간의 상호작용 분석 (문자열 설명)
+ */
+export function analyzeElementInteraction(from: WuXing, to: WuXing): string {
+  if (from === to) {
+    return `비화(比和) 관계로 같은 오행이 서로 돕습니다.`;
+  }
+
+  if (isGenerating(from, to)) {
+    return `${from}이(가) ${to}을(를) 생(生)하는 관계로 긍정적인 영향을 줍니다.`;
+  }
+
+  if (isGenerating(to, from)) {
+    return `${to}이(가) ${from}을(를) 생(生)하는 관계로 도움을 받습니다.`;
+  }
+
+  if (isDestroying(from, to)) {
+    return `${from}이(가) ${to}을(를) 극(克)하는 관계로 부정적인 영향을 줍니다.`;
+  }
+
+  if (isDestroying(to, from)) {
+    return `${to}이(가) ${from}을(를) 극(克)하는 관계로 어려움이 있을 수 있습니다.`;
+  }
+
+  return `중립적인 관계입니다.`;
+}
+
+/**
+ * 특정 오행을 생(生)하는 오행 반환
+ */
+export function getGeneratingElement(element: WuXing): WuXing {
+  const reverseGeneration: Record<WuXing, WuXing> = {
+    목: '수',
+    화: '목',
+    토: '화',
+    금: '토',
+    수: '금',
+  };
+  return reverseGeneration[element]!;
+}
+
+/**
+ * 특정 오행이 생(生)하는 오행 반환
+ */
+export function getGeneratedElement(element: WuXing): WuXing {
+  return WUXING_GENERATION[element]!;
+}
+
+/**
+ * 특정 오행을 극(克)하는 오행 반환
+ */
+export function getControllingElement(element: WuXing): WuXing {
+  const reverseDestruction: Record<WuXing, WuXing> = {
+    목: '금',
+    화: '수',
+    토: '목',
+    금: '화',
+    수: '토',
+  };
+  return reverseDestruction[element]!;
+}
+
+/**
+ * 특정 오행이 극(克)하는 오행 반환
+ */
+export function getControlledElement(element: WuXing): WuXing {
+  return WUXING_DESTRUCTION[element]!;
+}
+
+/**
+ * 특정 오행을 설(洩)하는 오행 반환 (생하는 대상)
+ */
+export function getWeakeningElement(element: WuXing): WuXing {
+  return WUXING_GENERATION[element]!;
+}
+

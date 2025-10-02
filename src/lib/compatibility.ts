@@ -4,6 +4,7 @@
 
 import type { SajuData, CompatibilityAnalysis } from '../types/index.js';
 import { analyzeWuXingRelation } from '../data/wuxing.js';
+import type { TenGod } from '../types/index.js';
 
 /**
  * 두 사람의 사주 궁합 분석
@@ -18,8 +19,16 @@ export function checkCompatibility(person1: SajuData, person2: SajuData): Compat
   // 3. 지지 충극 관계
   const branchRelation = analyzeBranchRelation(person1, person2);
 
+  // 4. 십성 궁합
+  const tenGodsCompatibility = analyzeTenGodsCompatibility(person1, person2);
+
   // 종합 점수 계산
-  const compatibilityScore = calculateOverallScore(dayCompatibility, elementHarmony, branchRelation);
+  const compatibilityScore = calculateOverallScore(
+    dayCompatibility,
+    elementHarmony,
+    branchRelation,
+    tenGodsCompatibility
+  );
 
   // 장단점 분석
   const strengths: string[] = [];
@@ -45,6 +54,14 @@ export function checkCompatibility(person1: SajuData, person2: SajuData): Compat
   } else if (branchRelation.isConflict) {
     weaknesses.push('지지가 충돌하여 예기치 않은 문제가 발생할 수 있습니다');
     advice.push('감정적인 대립을 피하고 이성적으로 대화하세요');
+  }
+
+  // 십성 궁합
+  if (tenGodsCompatibility.score >= 70) {
+    strengths.push(tenGodsCompatibility.description);
+  } else if (tenGodsCompatibility.score < 50) {
+    weaknesses.push(tenGodsCompatibility.description);
+    advice.push(tenGodsCompatibility.advice);
   }
 
   // 성격 궁합
@@ -265,26 +282,111 @@ function analyzePersonalityMatch(
 }
 
 /**
+ * 십성 궁합 분석
+ */
+function analyzeTenGodsCompatibility(
+  person1: SajuData,
+  person2: SajuData
+): { score: number; description: string; advice: string } {
+  let score = 60; // 기본 점수
+  let description = '';
+  let advice = '';
+
+  if (!person1.tenGodsDistribution || !person2.tenGodsDistribution) {
+    return { score: 60, description: '십성 정보가 부족합니다', advice: '' };
+  }
+
+  const dist1 = person1.tenGodsDistribution;
+  const dist2 = person2.tenGodsDistribution;
+
+  // 상호 보완성 분석
+  const complementaryPairs: Array<[TenGod, TenGod]> = [
+    ['정관', '정인'], // 관인상생: 직업운과 학습능력의 조화
+    ['정재', '식신'], // 식신생재: 창의성이 재물로 연결
+    ['정인', '비견'], // 인수생신: 학습이 자아를 강화
+    ['편재', '식신'], // 식신생재: 창의성으로 돈을 버는 조합
+    ['정관', '정재'], // 재관: 재물과 지위의 조화
+  ];
+
+  let complementCount = 0;
+  complementaryPairs.forEach(([god1, god2]) => {
+    if ((dist1[god1] >= 2 && dist2[god2] >= 2) || (dist1[god2] >= 2 && dist2[god1] >= 2)) {
+      complementCount++;
+      score += 10;
+    }
+  });
+
+  if (complementCount >= 2) {
+    description = '십성이 서로를 보완하여 시너지가 큽니다';
+    advice = '각자의 강점을 살려 협력하면 큰 성과를 이룰 수 있습니다';
+  } else if (complementCount === 1) {
+    description = '십성의 일부 영역에서 보완 관계가 있습니다';
+    advice = '서로의 장점을 인정하고 활용하세요';
+  }
+
+  // 경쟁 관계 분석
+  const competitivePairs: Array<[TenGod, TenGod]> = [
+    ['비견', '비견'], // 같은 자아, 경쟁
+    ['겁재', '겁재'], // 같은 경쟁심
+    ['편재', '편재'], // 재물 경쟁
+  ];
+
+  let conflictCount = 0;
+  competitivePairs.forEach(([god1, god2]) => {
+    if (dist1[god1] >= 3 && dist2[god2] >= 3) {
+      conflictCount++;
+      score -= 10;
+    }
+  });
+
+  if (conflictCount >= 2) {
+    description = '십성이 충돌하여 경쟁이 심할 수 있습니다';
+    advice = '서로 양보하고 협력하는 자세가 필요합니다';
+  }
+
+  // 균형 있는 십성 조합
+  const total1 = Object.values(dist1).reduce((sum, count) => sum + count, 0);
+  const total2 = Object.values(dist2).reduce((sum, count) => sum + count, 0);
+  const variance1 = Object.values(dist1).reduce((sum, count) => sum + Math.pow(count - total1 / 10, 2), 0);
+  const variance2 = Object.values(dist2).reduce((sum, count) => sum + Math.pow(count - total2 / 10, 2), 0);
+
+  if (variance1 < 3 && variance2 < 3) {
+    score += 10;
+    description = description || '두 사람 모두 균형잡힌 십성 분포를 가지고 있습니다';
+  }
+
+  return {
+    score: Math.max(0, Math.min(100, score)),
+    description: description || '십성 궁합이 무난합니다',
+    advice: advice || '서로의 특성을 이해하고 존중하세요',
+  };
+}
+
+/**
  * 종합 점수 계산
  */
 function calculateOverallScore(
   dayCompatibility: { score: number },
   elementHarmony: { harmony: number },
-  branchRelation: { isHarmony: boolean; isConflict: boolean }
+  branchRelation: { isHarmony: boolean; isConflict: boolean },
+  tenGodsCompatibility: { score: number }
 ): number {
   let score = 0;
 
-  // 일주 궁합 (40%)
-  score += dayCompatibility.score * 0.4;
+  // 일주 궁합 (35%)
+  score += dayCompatibility.score * 0.35;
 
-  // 오행 조화 (35%)
-  score += elementHarmony.harmony * 0.35;
+  // 오행 조화 (30%)
+  score += elementHarmony.harmony * 0.3;
 
-  // 지지 관계 (25%)
+  // 지지 관계 (20%)
   let branchScore = 50;
   if (branchRelation.isHarmony) branchScore = 80;
   if (branchRelation.isConflict) branchScore = 30;
-  score += branchScore * 0.25;
+  score += branchScore * 0.2;
+
+  // 십성 궁합 (15%)
+  score += tenGodsCompatibility.score * 0.15;
 
   return Math.round(score);
 }

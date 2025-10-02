@@ -2,7 +2,21 @@
   "permissions": {
     "allow": [
       "Bash(git log:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run lint:*)",
+      "Bash(node:*)",
+      "Bash(npm test)",
+      "Bash(npm install)",
+      "Bash(timeout 10 npm test)",
+      "Bash(wc:*)",
+      "Bash(timeout 30 npm test:*)",
+      "Bash(ls:*)",
+      "Bash(npx tsx:*)",
+      "Bash(awk:*)",
+      "Bash(timeout 10 npx tsx examples/verify_solar_terms_1900_2200.ts)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []

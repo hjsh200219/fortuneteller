@@ -54,6 +54,14 @@ export interface Pillar {
   yinYang: YinYang;
 }
 
+// 사주 사기둥 (Four Pillars)
+export interface SajuPillars {
+  year: Pillar; // 연주 (年柱)
+  month: Pillar; // 월주 (月柱)
+  day: Pillar; // 일주 (日柱)
+  hour: Pillar; // 시주 (時柱)
+}
+
 // 사주팔자 전체 데이터
 export interface SajuData {
   // 기본 정보
@@ -74,11 +82,111 @@ export interface SajuData {
 
   // 십성 분석
   tenGods: TenGod[];
+  tenGodsDistribution?: Record<TenGod, number>; // 십성 분포
+
+  // 신살
+  sinSals?: SinSal[]; // 신살 목록
+
+  // 지지 관계
+  branchRelations?: {
+    samHap?: { type: string | null; element: WuXing | null };
+    samHyeong?: string[];
+    yukHae?: [EarthlyBranch, EarthlyBranch][];
+    summary?: string;
+  };
+
+  // 지장간(支藏干) 정보
+  jiJangGan?: {
+    year: {
+      primary: { stem: HeavenlyStem; strength: number };
+      secondary?: { stem: HeavenlyStem; strength: number };
+      residual?: { stem: HeavenlyStem; strength: number };
+    };
+    month: {
+      primary: { stem: HeavenlyStem; strength: number };
+      secondary?: { stem: HeavenlyStem; strength: number };
+      residual?: { stem: HeavenlyStem; strength: number };
+    };
+    day: {
+      primary: { stem: HeavenlyStem; strength: number };
+      secondary?: { stem: HeavenlyStem; strength: number };
+      residual?: { stem: HeavenlyStem; strength: number };
+    };
+    hour: {
+      primary: { stem: HeavenlyStem; strength: number };
+      secondary?: { stem: HeavenlyStem; strength: number };
+      residual?: { stem: HeavenlyStem; strength: number };
+    };
+  };
+
+  // 월령 및 일간 강약
+  wolRyeong?: {
+    isDeukRyeong: boolean; // 득령 여부
+    reason: string;
+    strength: 'strong' | 'medium' | 'weak';
+  };
+  dayMasterStrength?: {
+    level: 'very_strong' | 'strong' | 'medium' | 'weak' | 'very_weak';
+    score: number; // 0-100
+    analysis: string;
+  };
+
+  // 격국(格局)
+  gyeokGuk?: {
+    gyeokGuk: string;
+    name: string;
+    hanja: string;
+    description: string;
+  };
+
+  // 용신(用神)
+  yongSin?: {
+    primaryYongSin: WuXing;
+    secondaryYongSin?: WuXing;
+    reasoning: string;
+  };
 
   // 특수 요소
   specialMarks?: string[];
   dominantElements?: WuXing[];
   weakElements?: WuXing[];
+}
+
+// 십성 해석 결과
+export interface TenGodInterpretation {
+  tenGod: TenGod;
+  count: number;
+  strengths: string[];
+  weaknesses: string[];
+  advice: string[];
+}
+
+// 신살(神殺) 타입
+export type SinSal =
+  | 'cheon_eul_gwi_in' // 천을귀인
+  | 'cheon_deok_gwi_in' // 천덕귀인
+  | 'wol_deok_gwi_in' // 월덕귀인
+  | 'mun_chang_gwi_in' // 문창귀인
+  | 'hak_dang_gwi_in' // 학당귀인
+  | 'geum_yeo_rok' // 금여록
+  | 'hwa_gae_sal' // 화개살
+  | 'yang_in_sal' // 양인살
+  | 'do_hwa_sal' // 도화살
+  | 'baek_ho_sal' // 백호살
+  | 'yeok_ma_sal' // 역마살
+  | 'gwa_suk_sal' // 고숙살 (과숙살)
+  | 'gong_mang' // 공망
+  | 'won_jin_sal' // 원진살
+  | 'gwi_mun_gwan_sal'; // 귀문관살
+
+export interface SinSalInfo {
+  sinSal: SinSal;
+  name: string;
+  hanja: string;
+  type: 'lucky' | 'unlucky' | 'neutral';
+  description: string;
+  effects: string[];
+  advice: string[];
 }
 
 // 운세 분석 타입
@@ -172,4 +280,7 @@ export class SajuError extends Error {
     this.name = 'SajuError';
   }
 }
+
+// 해석 유파 관련 타입
+export * from './interpretation.js';
 

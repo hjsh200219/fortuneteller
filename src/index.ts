@@ -18,13 +18,25 @@ import { handleAnalyzeFortune } from './tools/analyze_fortune.js';
 import { handleCheckCompatibility } from './tools/check_compatibility.js';
 import { handleConvertCalendar } from './tools/convert_calendar.js';
 import { handleGetDailyFortune } from './tools/get_daily_fortune.js';
+import { handleGetDaeUn } from './tools/get_dae_un.js';
+import { handleAnalyzeYongSin } from './tools/analyze_yong_sin.js';
+import { handleGetYearlyFortune } from './tools/get_yearly_fortune.js';
+import { handleGetMonthlyFortune } from './tools/get_monthly_fortune.js';
+import { handleGetHourlyFortune } from './tools/get_hourly_fortune.js';
+import { handleGetAPIStatus } from './tools/get_api_status.js';
+
+// 해석 유파 관련 도구들
+import { setInterpretationSettings } from './tools/set_interpretation_settings.js';
+import { compareInterpretationSchools } from './tools/compare_interpretation_schools.js';
+import { getInterpretationSettings } from './tools/get_interpretation_settings.js';
+import { analyzeWithYongSinMethod } from './tools/analyze_with_yongsin_method.js';
 
 /**
  * MCP 서버 생성 및 설정
  */
 const server = new Server(
   {
-    name: 'fortuneteller-mcp',
+    name: 'saju-mcp',
     version: '1.0.0',
   },
   {
@@ -162,6 +174,361 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           required: ['sajuData', 'date'],
         },
       },
+      {
+        name: 'get_dae_un',
+        description: '대운(大運) 정보를 조회합니다. 10년 단위의 큰 흐름 운세를 제공합니다.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            birthDate: {
+              type: 'string',
+              description: '생년월일 (YYYY-MM-DD)',
+              pattern: '^\\d{4}-\\d{2}-\\d{2}$',
+            },
+            birthTime: {
+              type: 'string',
+              description: '출생 시간 (HH:MM)',
+              pattern: '^\\d{2}:\\d{2}$',
+            },
+            calendar: {
+              type: 'string',
+              enum: ['solar', 'lunar'],
+              description: '달력 종류 (solar: 양력, lunar: 음력)',
+            },
+            isLeapMonth: {
+              type: 'boolean',
+              description: '윤달 여부 (음력인 경우)',
+            },
+            gender: {
+              type: 'string',
+              enum: ['male', 'female'],
+              description: '성별 (대운 순행/역행 결정에 필요)',
+            },
+            age: {
+              type: 'number',
+              description: '특정 나이의 대운 조회 (옵션)',
+            },
+            limit: {
+              type: 'number',
+              description: '조회할 대운 개수 (기본 10개)',
+            },
+          },
+          required: ['birthDate', 'birthTime', 'calendar', 'isLeapMonth', 'gender'],
+        },
+      },
+      {
+        name: 'analyze_yong_sin',
+        description: '용신(用神) 상세 분석 및 조언을 제공합니다. 색상, 방향, 직업, 활동 등을 추천합니다.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            birthDate: {
+              type: 'string',
+              description: '생년월일 (YYYY-MM-DD)',
+              pattern: '^\\d{4}-\\d{2}-\\d{2}$',
+            },
+            birthTime: {
+              type: 'string',
+              description: '출생 시간 (HH:MM)',
+              pattern: '^\\d{2}:\\d{2}$',
+            },
+            calendar: {
+              type: 'string',
+              enum: ['solar', 'lunar'],
+              description: '달력 종류 (solar: 양력, lunar: 음력)',
+            },
+            isLeapMonth: {
+              type: 'boolean',
+              description: '윤달 여부 (음력인 경우)',
+            },
+            gender: {
+              type: 'string',
+              enum: ['male', 'female'],
+              description: '성별',
+            },
+          },
+          required: ['birthDate', 'birthTime', 'calendar', 'isLeapMonth', 'gender'],
+        },
+      },
+      {
+        name: 'get_yearly_fortune',
+        description: '세운(歲運) 연별 운세를 조회합니다. 매년의 전반적인 운세와 직업, 재물, 건강, 인간관계 등을 분석합니다.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            birthDate: {
+              type: 'string',
+              description: '생년월일 (YYYY-MM-DD)',
+              pattern: '^\\d{4}-\\d{2}-\\d{2}$',
+            },
+            birthTime: {
+              type: 'string',
+              description: '출생 시간 (HH:MM)',
+              pattern: '^\\d{2}:\\d{2}$',
+            },
+            calendar: {
+              type: 'string',
+              enum: ['solar', 'lunar'],
+              description: '달력 종류 (solar: 양력, lunar: 음력)',
+            },
+            isLeapMonth: {
+              type: 'boolean',
+              description: '윤달 여부 (음력인 경우)',
+            },
+            gender: {
+              type: 'string',
+              enum: ['male', 'female'],
+              description: '성별',
+            },
+            targetYear: {
+              type: 'number',
+              description: '특정 연도 조회 (선택)',
+            },
+            years: {
+              type: 'number',
+              description: '조회할 연수 (기본 5년)',
+            },
+          },
+          required: ['birthDate', 'birthTime', 'calendar', 'isLeapMonth', 'gender'],
+        },
+      },
+      {
+        name: 'get_monthly_fortune',
+        description: '월운(月運) 월별 운세를 조회합니다. 매달의 업무, 금전, 건강, 연애 운세를 분석하고 길일과 주의일을 제공합니다.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            birthDate: {
+              type: 'string',
+              description: '생년월일 (YYYY-MM-DD)',
+              pattern: '^\\d{4}-\\d{2}-\\d{2}$',
+            },
+            birthTime: {
+              type: 'string',
+              description: '출생 시간 (HH:MM)',
+              pattern: '^\\d{2}:\\d{2}$',
+            },
+            calendar: {
+              type: 'string',
+              enum: ['solar', 'lunar'],
+              description: '달력 종류 (solar: 양력, lunar: 음력)',
+            },
+            isLeapMonth: {
+              type: 'boolean',
+              description: '윤달 여부 (음력인 경우)',
+            },
+            gender: {
+              type: 'string',
+              enum: ['male', 'female'],
+              description: '성별',
+            },
+            targetYear: {
+              type: 'number',
+              description: '특정 연도 (선택)',
+            },
+            targetMonth: {
+              type: 'number',
+              description: '특정 월 (1-12, 선택)',
+            },
+            months: {
+              type: 'number',
+              description: '조회할 개월수 (기본 12개월)',
+            },
+          },
+          required: ['birthDate', 'birthTime', 'calendar', 'isLeapMonth', 'gender'],
+        },
+      },
+      {
+        name: 'get_hourly_fortune',
+        description: '시운(時運) 시간대별 운세를 조회합니다. 12시진(2시간 단위)의 활동 적합도와 추천 활동을 제공합니다.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            birthDate: {
+              type: 'string',
+              description: '생년월일 (YYYY-MM-DD)',
+              pattern: '^\\d{4}-\\d{2}-\\d{2}$',
+            },
+            birthTime: {
+              type: 'string',
+              description: '출생 시간 (HH:MM)',
+              pattern: '^\\d{2}:\\d{2}$',
+            },
+            calendar: {
+              type: 'string',
+              enum: ['solar', 'lunar'],
+              description: '달력 종류 (solar: 양력, lunar: 음력)',
+            },
+            isLeapMonth: {
+              type: 'boolean',
+              description: '윤달 여부 (음력인 경우)',
+            },
+            gender: {
+              type: 'string',
+              enum: ['male', 'female'],
+              description: '성별',
+            },
+            targetDate: {
+              type: 'string',
+              description: '특정 날짜 (YYYY-MM-DD, 선택)',
+              pattern: '^\\d{4}-\\d{2}-\\d{2}$',
+            },
+            targetHour: {
+              type: 'number',
+              description: '특정 시각 (0-23, 선택)',
+            },
+            allHours: {
+              type: 'boolean',
+              description: '하루 전체 12시진 조회 (선택)',
+            },
+          },
+          required: ['birthDate', 'birthTime', 'calendar', 'isLeapMonth', 'gender'],
+        },
+      },
+      {
+        name: 'get_api_status',
+        description: 'KASI API 상태, Circuit Breaker, 캐시 통계를 조회합니다. API 장애 대응 시스템의 현재 상태를 확인할 수 있습니다.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            detailed: {
+              type: 'boolean',
+              description: '상세 정보 포함 여부 (기본값: false)',
+            },
+          },
+        },
+      },
+      {
+        name: 'set_interpretation_settings',
+        description: '사주 해석 설정을 변경합니다. 프리셋 또는 사용자 정의 설정을 적용할 수 있습니다.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            preset: {
+              type: 'string',
+              enum: ['traditional', 'modern_professional', 'health_focused', 'career_focused'],
+              description: '프리셋 선택',
+            },
+            customSettings: {
+              type: 'object',
+              description: '사용자 정의 설정 (부분 업데이트 가능)',
+            },
+          },
+        },
+      },
+      {
+        name: 'get_interpretation_settings',
+        description: '현재 적용된 사주 해석 설정을 조회합니다.',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+        },
+      },
+      {
+        name: 'compare_interpretation_schools',
+        description: '여러 유파(자평명리, 적천수, 궁통보감, 현대명리, 신살중심)의 해석을 비교합니다.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            year: {
+              type: 'number',
+              description: '출생 연도',
+            },
+            month: {
+              type: 'number',
+              description: '출생 월',
+            },
+            day: {
+              type: 'number',
+              description: '출생 일',
+            },
+            hour: {
+              type: 'number',
+              description: '출생 시',
+            },
+            minute: {
+              type: 'number',
+              description: '출생 분',
+            },
+            calendar: {
+              type: 'string',
+              enum: ['solar', 'lunar'],
+              description: '양력/음력',
+            },
+            isLeapMonth: {
+              type: 'boolean',
+              description: '윤달 여부',
+            },
+            gender: {
+              type: 'string',
+              enum: ['male', 'female'],
+              description: '성별',
+            },
+            schools: {
+              type: 'array',
+              items: {
+                type: 'string',
+                enum: ['ziping', 'dts', 'qtbj', 'modern', 'shensha'],
+              },
+              description: '비교할 유파 목록 (기본: 전체)',
+            },
+          },
+          required: ['year', 'month', 'day', 'hour', 'minute', 'gender'],
+        },
+      },
+      {
+        name: 'analyze_with_yongsin_method',
+        description: '특정 용신 방법론(강약용신, 조후용신, 통관용신, 병약용신)으로 사주를 분석하고 직업을 추천합니다.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            year: {
+              type: 'number',
+              description: '출생 연도',
+            },
+            month: {
+              type: 'number',
+              description: '출생 월',
+            },
+            day: {
+              type: 'number',
+              description: '출생 일',
+            },
+            hour: {
+              type: 'number',
+              description: '출생 시',
+            },
+            minute: {
+              type: 'number',
+              description: '출생 분',
+            },
+            calendar: {
+              type: 'string',
+              enum: ['solar', 'lunar'],
+              description: '양력/음력',
+            },
+            isLeapMonth: {
+              type: 'boolean',
+              description: '윤달 여부',
+            },
+            gender: {
+              type: 'string',
+              enum: ['male', 'female'],
+              description: '성별',
+            },
+            yongSinMethod: {
+              type: 'string',
+              enum: ['strength', 'seasonal', 'mediation', 'disease'],
+              description: '용신 방법론',
+            },
+            includeCareerRecommendation: {
+              type: 'boolean',
+              description: '직업 추천 포함 여부',
+            },
+          },
+          required: ['year', 'month', 'day', 'hour', 'minute', 'gender', 'yongSinMethod'],
+        },
+      },
     ],
   };
 });
@@ -211,7 +578,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case 'convert_calendar': {
-        const result = handleConvertCalendar(args as any);
+        const result = await handleConvertCalendar(args as any);
         return {
           content: [
             {
@@ -229,6 +596,126 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             {
               type: 'text',
               text: result,
+            },
+          ],
+        };
+      }
+
+      case 'get_dae_un': {
+        const result = handleGetDaeUn(args as any);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: result,
+            },
+          ],
+        };
+      }
+
+      case 'analyze_yong_sin': {
+        const result = handleAnalyzeYongSin(args as any);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: result,
+            },
+          ],
+        };
+      }
+
+      case 'get_yearly_fortune': {
+        const result = handleGetYearlyFortune(args as any);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: result,
+            },
+          ],
+        };
+      }
+
+      case 'get_monthly_fortune': {
+        const result = handleGetMonthlyFortune(args as any);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: result,
+            },
+          ],
+        };
+      }
+
+      case 'get_hourly_fortune': {
+        const result = handleGetHourlyFortune(args as any);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: result,
+            },
+          ],
+        };
+      }
+
+      case 'get_api_status': {
+        const result = handleGetAPIStatus(args as any);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: result,
+            },
+          ],
+        };
+      }
+
+      case 'set_interpretation_settings': {
+        const result = await setInterpretationSettings(args as any);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      }
+
+      case 'get_interpretation_settings': {
+        const result = await getInterpretationSettings();
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      }
+
+      case 'compare_interpretation_schools': {
+        const result = await compareInterpretationSchools(args as any);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      }
+
+      case 'analyze_with_yongsin_method': {
+        const result = await analyzeWithYongSinMethod(args as any);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2),
             },
           ],
         };

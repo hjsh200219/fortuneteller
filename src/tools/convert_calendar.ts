@@ -1,5 +1,6 @@
 /**
  * convert_calendar 도구 구현
+ * 한국천문연구원 API 기반 정확한 음양력 변환
  */
 
 import { convertCalendar, isValidDate } from '../lib/calendar.js';
@@ -11,7 +12,7 @@ export interface ConvertCalendarArgs {
   toCalendar: CalendarType;
 }
 
-export function handleConvertCalendar(args: ConvertCalendarArgs): string {
+export async function handleConvertCalendar(args: ConvertCalendarArgs): Promise<string> {
   // 입력 검증
   if (!isValidDate(args.date)) {
     throw new Error(`유효하지 않은 날짜 형식입니다: ${args.date}. YYYY-MM-DD 형식을 사용하세요.`);
@@ -32,8 +33,8 @@ export function handleConvertCalendar(args: ConvertCalendarArgs): string {
     );
   }
 
-  // 달력 변환
-  const result = convertCalendar(args.date, args.fromCalendar, args.toCalendar);
+  // 달력 변환 (KASI API 사용, 실패 시 근사 방식 폴백)
+  const result = await convertCalendar(args.date, args.fromCalendar, args.toCalendar);
 
   const formatted = `
 📅 음양력 변환 결과
