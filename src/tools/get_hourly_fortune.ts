@@ -10,11 +10,10 @@ import { analyzeSiUn, getDailySiUn } from '../lib/si_un.js';
 export interface GetHourlyFortuneArgs {
   birthDate: string;
   birthTime: string;
-  calendar: CalendarType;
-  isLeapMonth: boolean;
+  calendar?: CalendarType;
+  isLeapMonth?: boolean;
   gender: Gender;
-  targetDate?: string; // 특정 날짜 (YYYY-MM-DD, 선택)
-  targetHour?: number; // 특정 시각 (0-23, 선택)
+  targetDateTime?: string; // "YYYY-MM-DD HH:mm" 형식 (선택)
   allHours?: boolean; // 하루 전체 12시진 조회 (선택)
 }
 
@@ -22,11 +21,10 @@ export function handleGetHourlyFortune(args: GetHourlyFortuneArgs): string {
   const {
     birthDate,
     birthTime,
-    calendar,
-    isLeapMonth,
+    calendar = 'solar',
+    isLeapMonth = false,
     gender,
-    targetDate,
-    targetHour,
+    targetDateTime,
     allHours = false,
   } = args;
 
@@ -35,7 +33,37 @@ export function handleGetHourlyFortune(args: GetHourlyFortuneArgs): string {
 
   let result = '# 시운(時運) 시간대별 운세\n\n';
 
-  const date = targetDate || new Date().toISOString().split('T')[0]!;
+  // targetDateTime 파싱 (YYYY-MM-DD HH:mm 형식)
+  let date: string;
+  let hour: number;
+
+  if (targetDateTime) {
+    const parts = targetDateTime.split(' ');
+    if (parts.length !== 2) {
+      throw new Error(
+        `잘못된 일시 형식입니다: ${targetDateTime}. YYYY-MM-DD HH:mm 형식을 사용하세요.`
+      );
+    }
+
+    const [datePart, timePart] = parts;
+    date = datePart!;
+
+    const timeParts = timePart!.split(':');
+    if (timeParts.length < 1) {
+      throw new Error(`잘못된 시간 형식입니다: ${timePart}`);
+    }
+
+    const [hourStr] = timeParts;
+    hour = parseInt(hourStr!, 10);
+
+    if (isNaN(hour) || hour < 0 || hour > 23) {
+      throw new Error(`유효하지 않은 시간입니다: ${hourStr} (0-23 사이여야 합니다)`);
+    }
+  } else {
+    const now = new Date();
+    date = now.toISOString().split('T')[0]!;
+    hour = now.getHours();
+  }
 
   // 하루 전체 12시진 조회 vs 특정 시간 조회
   if (allHours) {
@@ -48,7 +76,6 @@ export function handleGetHourlyFortune(args: GetHourlyFortuneArgs): string {
       result += '\n---\n\n';
     }
   } else {
-    const hour = targetHour !== undefined ? targetHour : new Date().getHours();
     const siUn = analyzeSiUn(sajuData, date, hour);
     result += formatSingleHour(siUn);
   }

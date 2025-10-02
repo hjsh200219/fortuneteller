@@ -3,21 +3,44 @@
  */
 
 import { checkCompatibility } from '../lib/compatibility.js';
-import type { SajuData } from '../types/index.js';
+import { calculateSaju } from '../lib/saju.js';
+import type { CalendarType, Gender } from '../types/index.js';
+
+export interface PersonInfo {
+  birthDate: string;
+  birthTime: string;
+  calendar?: CalendarType;
+  isLeapMonth?: boolean;
+  gender: Gender;
+}
 
 export interface CheckCompatibilityArgs {
-  person1: SajuData;
-  person2: SajuData;
+  person1: PersonInfo;
+  person2: PersonInfo;
 }
 
 export function handleCheckCompatibility(args: CheckCompatibilityArgs): string {
-  // 입력 검증
-  if (!args.person1 || !args.person2) {
-    throw new Error('두 사람의 사주 데이터가 모두 필요합니다.');
-  }
+  const { person1, person2 } = args;
+
+  // 각 사람의 사주 계산
+  const sajuData1 = calculateSaju(
+    person1.birthDate,
+    person1.birthTime,
+    person1.calendar || 'solar',
+    person1.isLeapMonth || false,
+    person1.gender
+  );
+
+  const sajuData2 = calculateSaju(
+    person2.birthDate,
+    person2.birthTime,
+    person2.calendar || 'solar',
+    person2.isLeapMonth || false,
+    person2.gender
+  );
 
   // 궁합 분석
-  const compatibility = checkCompatibility(args.person1, args.person2);
+  const compatibility = checkCompatibility(sajuData1, sajuData2);
 
   // 결과 포맷팅
   const formatted = `

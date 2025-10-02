@@ -10,15 +10,23 @@ import { analyzeSeUn, getMultipleSeUn } from '../lib/se_un.js';
 export interface GetYearlyFortuneArgs {
   birthDate: string;
   birthTime: string;
-  calendar: CalendarType;
-  isLeapMonth: boolean;
+  calendar?: CalendarType;
+  isLeapMonth?: boolean;
   gender: Gender;
   targetYear?: number; // 특정 연도 조회 (선택)
   years?: number; // 조회할 연수 (기본 5년)
 }
 
 export function handleGetYearlyFortune(args: GetYearlyFortuneArgs): string {
-  const { birthDate, birthTime, calendar, isLeapMonth, gender, targetYear, years = 5 } = args;
+  const {
+    birthDate,
+    birthTime,
+    calendar = 'solar',
+    isLeapMonth = false,
+    gender,
+    targetYear,
+    years = 5,
+  } = args;
 
   // 사주 계산
   const sajuData = calculateSaju(birthDate, birthTime, calendar, isLeapMonth, gender);

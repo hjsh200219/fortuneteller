@@ -3,26 +3,37 @@
  */
 
 import { analyzeFortune } from '../lib/fortune.js';
-import type { SajuData, FortuneAnalysisType } from '../types/index.js';
+import { calculateSaju } from '../lib/saju.js';
+import type { CalendarType, Gender, FortuneAnalysisType } from '../types/index.js';
 
 export interface AnalyzeFortuneArgs {
-  sajuData: SajuData;
-  analysisType: FortuneAnalysisType;
-  targetDate?: string;
+  birthDate: string;
+  birthTime: string;
+  calendar?: CalendarType;
+  isLeapMonth?: boolean;
+  gender: Gender;
+  fortuneType: FortuneAnalysisType;
 }
 
 export function handleAnalyzeFortune(args: AnalyzeFortuneArgs): string {
-  // 입력 검증
-  if (!args.sajuData) {
-    throw new Error('사주 데이터가 필요합니다. 먼저 calculate_saju를 실행하세요.');
-  }
+  const {
+    birthDate,
+    birthTime,
+    calendar = 'solar',
+    isLeapMonth = false,
+    gender,
+    fortuneType,
+  } = args;
+
+  // 사주 계산
+  const sajuData = calculateSaju(birthDate, birthTime, calendar, isLeapMonth, gender);
 
   // 운세 분석
-  const analysis = analyzeFortune(args.sajuData, args.analysisType, args.targetDate);
+  const analysis = analyzeFortune(sajuData, fortuneType);
 
   // 결과 포맷팅
   const formatted = `
-🔮 ${getAnalysisTypeKorean(args.analysisType)} 분석
+🔮 ${getAnalysisTypeKorean(args.fortuneType)} 분석
 
 📊 운세 점수: ${analysis.score}/100
 

@@ -204,6 +204,116 @@ const adjustedDate = new Date(date.getTime() - 30 * 60 * 1000);
 4. `CallToolRequestSchema` switch문에 case 추가
 5. 재빌드 및 테스트
 
+### MCP 도구 개발 시 주의사항
+
+#### 스키마-핸들러 일관성 (Schema-Handler Consistency)
+**중요**: MCP 도구의 스키마 정의와 핸들러 인터페이스는 반드시 일치해야 합니다.
+
+**올바른 패턴**:
+```typescript
+// ✅ 스키마에서 개별 필드를 정의한 경우
+{
+  name: 'example_tool',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      birthDate: { type: 'string' },
+      birthTime: { type: 'string' },
+      calendar: { type: 'string', enum: ['solar', 'lunar'], default: 'solar' },
+      isLeapMonth: { type: 'boolean', default: false }
+    },
+    required: ['birthDate', 'birthTime']
+  }
+}
+
+// ✅ 핸들러 인터페이스도 개별 필드로 정의
+export interface ExampleToolArgs {
+  birthDate: string;
+  birthTime: string;
+  calendar?: CalendarType;  // optional, 스키마의 default 값 활용
+  isLeapMonth?: boolean;    // optional, 스키마의 default 값 활용
+}
+
+// ✅ 핸들러에서 기본값 적용
+export function handleExampleTool(args: ExampleToolArgs): string {
+  const {
+    birthDate,
+    birthTime,
+    calendar = 'solar',      // 기본값 명시
+    isLeapMonth = false,     // 기본값 명시
+  } = args;
+
+  // 내부에서 필요시 calculateSaju() 호출
+  const sajuData = calculateSaju(birthDate, birthTime, calendar, isLeapMonth, gender);
+  // ...
+}
+```
+
+**잘못된 패턴** (❌):
+```typescript
+// ❌ 스키마는 개별 필드인데 핸들러는 객체를 받는 경우
+export interface WrongArgs {
+  sajuData: SajuData;  // 스키마와 불일치!
+}
+```
+
+#### 기본값(Default) 처리 규칙
+스키마에 `default` 값이 있는 필드는:
+1. 핸들러 인터페이스에서 **optional**(`?`)로 선언
+2. 핸들러 함수에서 **destructuring 시 기본값 명시**
+
+```typescript
+// 스키마: default: 'solar'
+calendar?: CalendarType;  // optional
+
+// 핸들러: 기본값 적용
+const { calendar = 'solar' } = args;
+```
+
+#### 날짜/시간 문자열 파싱 시 검증 필수
+문자열 형식의 날짜/시간을 파싱할 때는 반드시 검증 로직을 추가해야 합니다:
+
+**YYYY-MM 형식 파싱**:
+```typescript
+if (targetMonth) {
+  const parts = targetMonth.split('-');
+  if (parts.length !== 2) {
+    throw new Error(`잘못된 월 형식입니다: ${targetMonth}. YYYY-MM 형식을 사용하세요.`);
+  }
+
+  const year = parseInt(parts[0]!, 10);
+  const month = parseInt(parts[1]!, 10);
+
+  if (isNaN(year) || isNaN(month) || month < 1 || month > 12) {
+    throw new Error(`유효하지 않은 월입니다: ${targetMonth}`);
+  }
+}
+```
+
+**YYYY-MM-DD HH:mm 형식 파싱**:
+```typescript
+if (targetDateTime) {
+  const parts = targetDateTime.split(' ');
+  if (parts.length !== 2) {
+    throw new Error(
+      `잘못된 일시 형식입니다: ${targetDateTime}. YYYY-MM-DD HH:mm 형식을 사용하세요.`
+    );
+  }
+
+  const [datePart, timePart] = parts;
+  const hour = parseInt(timePart!.split(':')[0]!, 10);
+
+  if (isNaN(hour) || hour < 0 || hour > 23) {
+    throw new Error(`유효하지 않은 시간입니다: ${hour} (0-23 사이여야 합니다)`);
+  }
+}
+```
+
+#### 에러 메시지 작성 규칙
+- 모든 에러 메시지는 **한국어**로 작성
+- 구체적인 오류 내용과 올바른 형식을 함께 안내
+- 예: `throw new Error(\`잘못된 월 형식입니다: ${targetMonth}. YYYY-MM 형식을 사용하세요.\`);`
+
 ### 오행 관계 다루기
 [src/data/wuxing.ts](src/data/wuxing.ts) 유틸리티 사용:
 - `getGeneratingElement()` - 이 오행을 생(生)하는 오행

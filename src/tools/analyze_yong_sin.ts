@@ -10,14 +10,20 @@ import type { CalendarType, Gender } from '../types/index.js';
 export interface AnalyzeYongSinArgs {
   birthDate: string;
   birthTime: string;
-  calendar: CalendarType;
-  isLeapMonth: boolean;
+  calendar?: CalendarType;
+  isLeapMonth?: boolean;
   gender: Gender;
 }
 
 export function handleAnalyzeYongSin(args: AnalyzeYongSinArgs): string {
   try {
-    const { birthDate, birthTime, calendar, isLeapMonth, gender } = args;
+    const {
+      birthDate,
+      birthTime,
+      calendar = 'solar',
+      isLeapMonth = false,
+      gender,
+    } = args;
 
     // 1. 사주 계산
     const sajuData = calculateSaju(birthDate, birthTime, calendar, isLeapMonth, gender);

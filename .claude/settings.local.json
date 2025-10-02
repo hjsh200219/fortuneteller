@@ -27,7 +27,10 @@
       "Bash(npm test:*)",
       "Bash(npx jest:*)",
       "Bash(npm uninstall:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(for file in src/tools/*.ts)",
+      "Bash(do echo \"=== $file ===\")",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []

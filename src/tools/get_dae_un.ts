@@ -10,8 +10,8 @@ import type { CalendarType, Gender } from '../types/index.js';
 export interface GetDaeUnArgs {
   birthDate: string;
   birthTime: string;
-  calendar: CalendarType;
-  isLeapMonth: boolean;
+  calendar?: CalendarType;
+  isLeapMonth?: boolean;
   gender: Gender;
   age?: number; // 특정 나이의 대운 조회 (옵션)
   limit?: number; // 조회할 대운 개수 (기본 10개)
@@ -19,7 +19,15 @@ export interface GetDaeUnArgs {
 
 export function handleGetDaeUn(args: GetDaeUnArgs): string {
   try {
-    const { birthDate, birthTime, calendar, isLeapMonth, gender, age, limit = 10 } = args;
+    const {
+      birthDate,
+      birthTime,
+      calendar = 'solar',
+      isLeapMonth = false,
+      gender,
+      age,
+      limit = 10,
+    } = args;
 
     // 1. 사주 계산
     const sajuData = calculateSaju(birthDate, birthTime, calendar, isLeapMonth, gender);
