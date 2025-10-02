@@ -74,7 +74,7 @@ export class ModernInterpreter extends BaseSchoolInterpreter {
     return `개인 브랜딩과 전문성 구축이 명예로 이어집니다. ${yongSin} 분야의 전문가로 성장하고, SNS와 블로그를 통해 영향력을 키우세요.`;
   }
 
-  private pillarsToSajuData(pillars: SajuPillars): any {
+  private pillarsToSajuData(pillars: SajuPillars): import('../../types/index.js').SajuData {
     return {
       day: pillars.day,
       month: pillars.month,

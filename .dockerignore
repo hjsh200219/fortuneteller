@@ -1,0 +1,64 @@
+# Node modules
+node_modules/
+npm-debug.log
+
+# 소스 파일 (빌드된 파일만 사용)
+src/
+*.ts
+!*.d.ts
+
+# 테스트
+**/__tests__/
+**/*.test.ts
+**/*.spec.ts
+jest.config.js
+coverage/
+
+# 개발 도구
+.eslintrc.*
+.prettierrc
+tsconfig.json
+tsconfig.*.json
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 문서 (배포용 제외)
+docs/
+examples/
+*.md
+!README.md
+
+# 환경 파일
+.env
+.env.*
+
+# 로그
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 빌드 캐시
+.cache/
+.temp/
+.tmp/
+
+# Claude 설정
+.claude/
+CLAUDE.md
+
+# 배포 관련
+PUBLISHING.md
+DEPLOYMENT_CHECKLIST.md
+install.sh

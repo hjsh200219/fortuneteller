@@ -16,7 +16,18 @@
       "Bash(npx tsx:*)",
       "Bash(awk:*)",
       "Bash(timeout 10 npx tsx examples/verify_solar_terms_1900_2200.ts)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(git push:*)",
+      "Bash(git restore:*)",
+      "Bash(npm pack:*)",
+      "Bash(chmod:*)",
+      "Bash(cat:*)",
+      "Bash(npm install:*)",
+      "Bash(npm info:*)",
+      "Bash(npm test:*)",
+      "Bash(npx jest:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": []

@@ -62,7 +62,13 @@ describe('InterpretationSettings', () => {
       settings.loadPreset('traditional');
       settings.loadCustom({
         yongSinMethod: 'seasonal',
-        priorities: { wealth: 0.9 },
+        priorities: {
+          wealth: 0.9,
+          health: 0.9,
+          career: 0.8,
+          relationship: 0.7,
+          fame: 0.6,
+        },
       });
 
       const current = settings.getSettings();
@@ -119,13 +125,25 @@ describe('InterpretationSettings', () => {
       settings.loadPreset('traditional');
       expect(() => {
         settings.loadCustom({
-          priorities: { health: 1.5 }, // > 1.0
+          priorities: {
+            health: 1.5, // > 1.0
+            wealth: 0.8,
+            career: 0.7,
+            relationship: 0.6,
+            fame: 0.5,
+          },
         });
       }).toThrow(SettingsValidationError);
 
       expect(() => {
         settings.loadCustom({
-          priorities: { wealth: -0.1 }, // < 0.0
+          priorities: {
+            wealth: -0.1, // < 0.0
+            health: 0.9,
+            career: 0.8,
+            relationship: 0.7,
+            fame: 0.6,
+          },
         });
       }).toThrow(SettingsValidationError);
     });
@@ -134,7 +152,10 @@ describe('InterpretationSettings', () => {
       settings.loadPreset('traditional');
       expect(() => {
         settings.loadCustom({
-          fortuneWeights: { daeun: 1.5 },
+          fortuneWeights: {
+            daeun: 1.5,
+            seyun: 0.5,
+          },
         });
       }).toThrow(SettingsValidationError);
     });

@@ -24,8 +24,8 @@ export interface ComprehensiveValidationResult {
   failedCases: {
     category: string;
     testCase: string;
-    expected: any;
-    actual: any;
+    expected: unknown;
+    actual: unknown;
     reason: string;
   }[];
   recommendations: string[];

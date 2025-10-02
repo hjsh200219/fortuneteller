@@ -1,9 +1,17 @@
 {
-  "name": "saju-mcp",
-  "version": "1.0.0",
-  "description": "사주팔자 운세 분석을 위한 MCP 서버",
+  "name": "@hoshin/saju-mcp-server",
+  "version": "1.1.0",
+  "description": "한국 전통 사주팔자 운세 분석을 위한 MCP(Model Context Protocol) 서버",
   "main": "dist/index.js",
   "type": "module",
+  "bin": {
+    "saju-mcp-server": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/index.ts",
@@ -12,22 +20,43 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "test:integration": "jest --testPathPattern=integration",
     "lint": "eslint src --ext .ts",
-    "format": "prettier --write \"src/**/*.ts\""
+    "format": "prettier --write \"src/**/*.ts\"",
+    "docs": "typedoc",
+    "docs:serve": "npx http-server docs/api -p 8080",
+    "benchmark": "tsx src/benchmark/index.ts",
+    "prepublishOnly": "npm run build && npm run lint && npm test",
+    "postinstall": "node -e \"console.log('\\n🔮 사주 MCP 서버가 설치되었습니다!\\n\\nClaude Desktop 설정:\\n~/Library/Application Support/Claude/claude_desktop_config.json\\n\\n{\\'mcpServers\\': {\\'saju\\': {\\'command\\': \\'saju-mcp-server\\'}}}\\n\\n자세한 설정: https://github.com/hjsh200219/fortuneteller\\n')\""
   },
   "keywords": [
     "mcp",
+    "mcp-server",
+    "model-context-protocol",
     "fortune-telling",
     "saju",
     "korean-astrology",
     "fortune",
     "사주팔자",
-    "운세"
+    "운세",
+    "명리학",
+    "ai-assistant"
   ],
-  "author": "",
+  "author": "Hoshin",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hjsh200219/fortuneteller.git"
+  },
+  "bugs": {
+    "url": "https://github.com/hjsh200219/fortuneteller/issues"
+  },
+  "homepage": "https://github.com/hjsh200219/fortuneteller#readme",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.4"
+    "@modelcontextprotocol/sdk": "^1.18.2",
+    "date-fns": "^4.1.0",
+    "date-fns-tz": "^3.2.0",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",
@@ -40,10 +69,13 @@
     "prettier": "^3.4.2",
     "ts-jest": "^29.1.2",
     "tsx": "^4.19.2",
+    "typedoc": "^0.28.13",
     "typescript": "^5.7.2"
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
-

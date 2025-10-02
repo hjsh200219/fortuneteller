@@ -131,9 +131,9 @@ export class LRUCache<K, V> {
 /**
  * 전역 캐시 인스턴스
  */
-export const sajuCache = new LRUCache<string, any>(1000, 60); // 1000개, 60분 TTL
-export const daeUnCache = new LRUCache<string, any>(500, 120); // 500개, 120분 TTL
-export const yongSinCache = new LRUCache<string, any>(500, 120); // 500개, 120분 TTL
+export const sajuCache = new LRUCache<string, unknown>(1000, 60); // 1000개, 60분 TTL
+export const daeUnCache = new LRUCache<string, unknown>(500, 120); // 500개, 120분 TTL
+export const yongSinCache = new LRUCache<string, unknown>(500, 120); // 500개, 120분 TTL
 
 /**
  * 캐시 키 생성 헬퍼

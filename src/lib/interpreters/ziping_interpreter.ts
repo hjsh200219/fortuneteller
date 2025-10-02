@@ -111,7 +111,7 @@ export class ZipingInterpreter extends BaseSchoolInterpreter {
   }
 
   // 유틸리티 메서드들
-  private pillarsToSajuData(pillars: SajuPillars): any {
+  private pillarsToSajuData(pillars: SajuPillars): import('../../types/index.js').SajuData {
     return {
       day: pillars.day,
       month: pillars.month,

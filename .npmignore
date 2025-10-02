@@ -1,0 +1,58 @@
+# 소스 파일
+src/
+*.ts
+!*.d.ts
+
+# 테스트 파일
+**/__tests__/
+**/*.test.ts
+**/*.spec.ts
+jest.config.js
+coverage/
+
+# 개발 도구
+.eslintrc.*
+.prettierrc
+tsconfig.json
+tsconfig.*.json
+
+# 문서 (배포용이 아닌 경우)
+docs/
+examples/
+*.md
+!README.md
+
+# 버전 관리
+.git/
+.gitignore
+.gitattributes
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 빌드
+.cache/
+.temp/
+.tmp/
+
+# 환경 파일
+.env
+.env.*
+
+# 로그
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude 설정
+.claude/
+CLAUDE.md
