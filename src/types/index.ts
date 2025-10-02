@@ -156,6 +156,7 @@ export interface SajuData {
 export interface TenGodInterpretation {
   tenGod: TenGod;
   count: number;
+  intensity: 'very_strong' | 'strong' | 'moderate' | 'weak' | 'very_weak'; // 강도 표현
   strengths: string[];
   weaknesses: string[];
   advice: string[];

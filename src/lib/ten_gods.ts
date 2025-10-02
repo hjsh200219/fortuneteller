@@ -138,7 +138,7 @@ export function calculateTenGod(dayStem: HeavenlyStem, targetStem: HeavenlyStem)
 }
 
 /**
- * 사주 전체의 십성 분포 계산
+ * 사주 전체의 십성 분포 계산 (지장간 세력 반영)
  */
 export function calculateTenGodsDistribution(sajuData: SajuData): Record<TenGod, number> {
   const distribution: Record<TenGod, number> = {
@@ -167,25 +167,50 @@ export function calculateTenGodsDistribution(sajuData: SajuData): Record<TenGod,
     }
   });
 
-  // 지지의 지장간도 고려 (간단 버전: 지지의 대표 오행만 사용)
-  // TODO: 추후 지장간 상세 구현 시 정교화
-  const branches = [
-    sajuData.year.branch,
-    sajuData.month.branch,
-    sajuData.day.branch,
-    sajuData.hour.branch,
-  ];
+  // 지장간 세력을 직접 반영
+  if (sajuData.jiJangGan) {
+    const pillars = ['year', 'month', 'day', 'hour'] as const;
 
-  // 지지는 0.5 가중치로 계산 (천간보다 약한 영향)
-  branches.forEach((branch) => {
-    // 지지의 지장간 정기를 천간으로 변환하여 십성 계산
-    // 간략화를 위해 지지의 대표 오행으로 천간 매핑
-    const branchStem = mapBranchToStem(branch);
-    if (branchStem && branchStem !== dayStem) {
-      const tenGod = calculateTenGod(dayStem, branchStem);
-      distribution[tenGod] += 0.5;
-    }
-  });
+    pillars.forEach((pillar) => {
+      const jiJangGan = sajuData.jiJangGan?.[pillar];
+      if (!jiJangGan) return;
+
+      // 정기(正氣) - 주 지장간
+      if (jiJangGan.primary && jiJangGan.primary.stem !== dayStem) {
+        const tenGod = calculateTenGod(dayStem, jiJangGan.primary.stem);
+        // 세력을 백분율로 변환하여 가중치로 사용 (0-1 범위)
+        distribution[tenGod] += jiJangGan.primary.strength / 100;
+      }
+
+      // 중기(中氣) - 보조 지장간
+      if (jiJangGan.secondary && jiJangGan.secondary.stem !== dayStem) {
+        const tenGod = calculateTenGod(dayStem, jiJangGan.secondary.stem);
+        distribution[tenGod] += jiJangGan.secondary.strength / 100;
+      }
+
+      // 여기(餘氣) - 잔여 지장간
+      if (jiJangGan.residual && jiJangGan.residual.stem !== dayStem) {
+        const tenGod = calculateTenGod(dayStem, jiJangGan.residual.stem);
+        distribution[tenGod] += jiJangGan.residual.strength / 100;
+      }
+    });
+  } else {
+    // 지장간 정보가 없을 경우 기존 방식 (0.5 가중치)
+    const branches = [
+      sajuData.year.branch,
+      sajuData.month.branch,
+      sajuData.day.branch,
+      sajuData.hour.branch,
+    ];
+
+    branches.forEach((branch) => {
+      const branchStem = mapBranchToStem(branch);
+      if (branchStem && branchStem !== dayStem) {
+        const tenGod = calculateTenGod(dayStem, branchStem);
+        distribution[tenGod] += 0.5;
+      }
+    });
+  }
 
   return distribution;
 }
@@ -248,24 +273,60 @@ export function generateTenGodsList(sajuData: SajuData): TenGod[] {
 }
 
 /**
- * 십성별 의미 해석
+ * 십성 개수에 따른 강도 판단
+ */
+function getIntensity(count: number): 'very_strong' | 'strong' | 'moderate' | 'weak' | 'very_weak' {
+  if (count >= 3) return 'very_strong';
+  if (count >= 1.5) return 'strong';
+  if (count >= 0.8) return 'moderate';
+  if (count > 0) return 'weak';
+  return 'very_weak';
+}
+
+/**
+ * 강도에 따른 수식어 반환
+ */
+function getIntensityModifier(intensity: 'very_strong' | 'strong' | 'moderate' | 'weak' | 'very_weak'): string {
+  switch (intensity) {
+    case 'very_strong':
+      return '매우 강한';
+    case 'strong':
+      return '강한';
+    case 'moderate':
+      return '적당한';
+    case 'weak':
+      return '약간의';
+    case 'very_weak':
+      return '매우 약한';
+  }
+}
+
+/**
+ * 십성별 의미 해석 (연속적 범위 반영)
  */
 export function interpretTenGod(tenGod: TenGod, count: number): TenGodInterpretation {
-  // const data = TEN_GODS_DATA[tenGod]; // 향후 확장용
   const strengths: string[] = [];
   const weaknesses: string[] = [];
   const advice: string[] = [];
+  const intensity = getIntensity(count);
+  const modifier = getIntensityModifier(intensity);
 
   // 십성별 해석
   switch (tenGod) {
     case '비견':
-      if (count >= 2) {
-        strengths.push('강한 자립심과 독립성을 가지고 있습니다');
-        strengths.push('목표 지향적이며 끈기가 있습니다');
-        weaknesses.push('고집이 세고 타협을 어려워할 수 있습니다');
-        advice.push('협력과 타협의 중요성을 인식하세요');
-      } else if (count === 1) {
-        strengths.push('적당한 자존심과 자립심이 있습니다');
+      if (count >= 1.5) {
+        strengths.push(`${modifier} 자립심과 독립성을 가지고 있습니다`);
+        if (count >= 3) {
+          strengths.push('강력한 목표 지향성과 끈기가 있습니다');
+          weaknesses.push('고집이 매우 세고 타협을 어려워할 수 있습니다');
+          advice.push('협력과 타협의 중요성을 인식하고 유연성을 기르세요');
+        } else {
+          strengths.push('목표 지향적이며 끈기가 있습니다');
+          weaknesses.push('고집이 세고 타협을 어려워할 수 있습니다');
+          advice.push('협력과 타협의 중요성을 인식하세요');
+        }
+      } else if (count >= 0.5) {
+        strengths.push(`${modifier} 자존심과 자립심이 있습니다`);
         advice.push('자신감을 유지하며 타인과 균형있게 지내세요');
       } else {
         weaknesses.push('의지력이나 추진력이 약할 수 있습니다');
@@ -274,22 +335,32 @@ export function interpretTenGod(tenGod: TenGod, count: number): TenGodInterpreta
       break;
 
     case '겁재':
-      if (count >= 2) {
-        strengths.push('협력과 팀워크에 능숙합니다');
-        weaknesses.push('재물 손실이나 경쟁 상황이 있을 수 있습니다');
-        advice.push('재물 관리에 신중하고 경쟁보다는 협력을 택하세요');
-      } else if (count === 1) {
-        strengths.push('적절한 경쟁심과 협력심이 있습니다');
+      if (count >= 1.5) {
+        strengths.push(`${modifier} 협력과 팀워크 능력이 있습니다`);
+        if (count >= 3) {
+          weaknesses.push('재물 손실이나 과도한 경쟁 상황에 주의가 필요합니다');
+          advice.push('재물 관리에 매우 신중하고 경쟁보다는 협력을 택하세요');
+        } else {
+          weaknesses.push('재물 손실이나 경쟁 상황이 있을 수 있습니다');
+          advice.push('재물 관리에 신중하고 경쟁보다는 협력을 택하세요');
+        }
+      } else if (count >= 0.5) {
+        strengths.push(`${modifier} 경쟁심과 협력심이 있습니다`);
       }
       break;
 
     case '식신':
-      if (count >= 2) {
-        strengths.push('풍부한 창의력과 예술적 재능이 있습니다');
-        strengths.push('여유롭고 낙천적인 성격입니다');
-        advice.push('창작 활동이나 서비스업에 적합합니다');
-      } else if (count === 1) {
-        strengths.push('안정적인 표현력과 창의성이 있습니다');
+      if (count >= 1.5) {
+        strengths.push(`${modifier} 창의력과 예술적 재능이 있습니다`);
+        if (count >= 3) {
+          strengths.push('매우 여유롭고 낙천적인 성격입니다');
+          advice.push('창작 활동이나 서비스업에서 뛰어난 재능을 발휘할 수 있습니다');
+        } else {
+          strengths.push('여유롭고 낙천적인 성격입니다');
+          advice.push('창작 활동이나 서비스업에 적합합니다');
+        }
+      } else if (count >= 0.5) {
+        strengths.push(`${modifier} 표현력과 창의성이 있습니다`);
       } else {
         weaknesses.push('창의력이나 표현력이 부족할 수 있습니다');
         advice.push('예술이나 취미 활동을 통해 표현력을 키우세요');
@@ -297,23 +368,34 @@ export function interpretTenGod(tenGod: TenGod, count: number): TenGodInterpreta
       break;
 
     case '상관':
-      if (count >= 2) {
-        strengths.push('탁월한 재능과 비판적 사고력이 있습니다');
-        strengths.push('개혁적이고 자유로운 사고를 합니다');
-        weaknesses.push('권위에 반항적이거나 비판적일 수 있습니다');
-        advice.push('재능을 긍정적으로 활용하고 조화를 추구하세요');
-      } else if (count === 1) {
-        strengths.push('적당한 비판력과 개혁 성향이 있습니다');
+      if (count >= 1.5) {
+        strengths.push(`${modifier} 재능과 비판적 사고력이 있습니다`);
+        if (count >= 3) {
+          strengths.push('매우 개혁적이고 자유로운 사고를 합니다');
+          weaknesses.push('권위에 매우 반항적이거나 비판적일 수 있습니다');
+          advice.push('탁월한 재능을 긍정적으로 활용하고 조화를 추구하세요');
+        } else {
+          strengths.push('개혁적이고 자유로운 사고를 합니다');
+          weaknesses.push('권위에 반항적이거나 비판적일 수 있습니다');
+          advice.push('재능을 긍정적으로 활용하고 조화를 추구하세요');
+        }
+      } else if (count >= 0.5) {
+        strengths.push(`${modifier} 비판력과 개혁 성향이 있습니다`);
       }
       break;
 
     case '편재':
-      if (count >= 2) {
-        strengths.push('사교적이고 활동적인 재물운이 있습니다');
-        strengths.push('다양한 사업 기회를 만들 수 있습니다');
-        advice.push('사업이나 영업직에 적합합니다');
-      } else if (count === 1) {
-        strengths.push('안정적인 재물운과 사교성이 있습니다');
+      if (count >= 1.5) {
+        strengths.push(`${modifier} 사교적이고 활동적인 재물운이 있습니다`);
+        if (count >= 3) {
+          strengths.push('매우 다양한 사업 기회를 만들 수 있습니다');
+          advice.push('사업이나 영업직에서 탁월한 능력을 발휘할 수 있습니다');
+        } else {
+          strengths.push('다양한 사업 기회를 만들 수 있습니다');
+          advice.push('사업이나 영업직에 적합합니다');
+        }
+      } else if (count >= 0.5) {
+        strengths.push(`${modifier} 재물운과 사교성이 있습니다`);
       } else {
         weaknesses.push('재물운이 약하거나 소극적일 수 있습니다');
         advice.push('적극적인 재물 활동을 하세요');
@@ -321,32 +403,47 @@ export function interpretTenGod(tenGod: TenGod, count: number): TenGodInterpreta
       break;
 
     case '정재':
-      if (count >= 2) {
-        strengths.push('성실하고 근면한 재물 관리 능력이 있습니다');
-        strengths.push('안정적인 수입원을 확보합니다');
-        advice.push('정직하고 꾸준한 직업이 유리합니다');
-      } else if (count === 1) {
-        strengths.push('균형잡힌 재물운이 있습니다');
+      if (count >= 1.5) {
+        strengths.push(`${modifier} 성실하고 근면한 재물 관리 능력이 있습니다`);
+        if (count >= 3) {
+          strengths.push('매우 안정적인 수입원을 확보합니다');
+          advice.push('정직하고 꾸준한 직업에서 큰 성공을 거둘 수 있습니다');
+        } else {
+          strengths.push('안정적인 수입원을 확보합니다');
+          advice.push('정직하고 꾸준한 직업이 유리합니다');
+        }
+      } else if (count >= 0.5) {
+        strengths.push(`${modifier} 균형잡힌 재물운이 있습니다`);
       }
       break;
 
     case '편관':
-      if (count >= 2) {
-        strengths.push('강한 추진력과 결단력이 있습니다');
-        weaknesses.push('스트레스나 압박감이 있을 수 있습니다');
-        advice.push('에너지를 긍정적으로 활용하세요');
-      } else if (count === 1) {
-        strengths.push('적당한 권위와 추진력이 있습니다');
+      if (count >= 1.5) {
+        strengths.push(`${modifier} 추진력과 결단력이 있습니다`);
+        if (count >= 3) {
+          weaknesses.push('과도한 스트레스나 압박감이 있을 수 있습니다');
+          advice.push('강한 에너지를 긍정적으로 활용하고 휴식과 균형을 유지하세요');
+        } else {
+          weaknesses.push('스트레스나 압박감이 있을 수 있습니다');
+          advice.push('에너지를 긍정적으로 활용하세요');
+        }
+      } else if (count >= 0.5) {
+        strengths.push(`${modifier} 권위와 추진력이 있습니다`);
       }
       break;
 
     case '정관':
-      if (count >= 2) {
-        strengths.push('책임감이 강하고 질서를 중시합니다');
-        strengths.push('조직생활에 적합합니다');
-        advice.push('공무원이나 대기업 직장인으로 적합합니다');
-      } else if (count === 1) {
-        strengths.push('적절한 책임감과 규율이 있습니다');
+      if (count >= 1.5) {
+        strengths.push(`${modifier} 책임감이 있고 질서를 중시합니다`);
+        if (count >= 3) {
+          strengths.push('조직생활에 매우 적합합니다');
+          advice.push('공무원이나 대기업 관리직으로 큰 성공을 거둘 수 있습니다');
+        } else {
+          strengths.push('조직생활에 적합합니다');
+          advice.push('공무원이나 대기업 직장인으로 적합합니다');
+        }
+      } else if (count >= 0.5) {
+        strengths.push(`${modifier} 책임감과 규율이 있습니다`);
       } else {
         weaknesses.push('권위나 책임감이 부족할 수 있습니다');
         advice.push('책임감을 기르고 조직 활동에 참여하세요');
@@ -354,22 +451,32 @@ export function interpretTenGod(tenGod: TenGod, count: number): TenGodInterpreta
       break;
 
     case '편인':
-      if (count >= 2) {
-        strengths.push('독창적이고 직관적인 사고를 합니다');
-        strengths.push('특수 분야나 종교·철학에 관심이 많습니다');
-        advice.push('전문적이고 독특한 분야에서 재능을 발휘하세요');
-      } else if (count === 1) {
-        strengths.push('균형잡힌 직관력과 학습력이 있습니다');
+      if (count >= 1.5) {
+        strengths.push(`${modifier} 독창적이고 직관적인 사고를 합니다`);
+        if (count >= 3) {
+          strengths.push('특수 분야나 종교·철학에 매우 깊은 관심이 있습니다');
+          advice.push('전문적이고 독특한 분야에서 탁월한 재능을 발휘할 수 있습니다');
+        } else {
+          strengths.push('특수 분야나 종교·철학에 관심이 많습니다');
+          advice.push('전문적이고 독특한 분야에서 재능을 발휘하세요');
+        }
+      } else if (count >= 0.5) {
+        strengths.push(`${modifier} 직관력과 학습력이 있습니다`);
       }
       break;
 
     case '정인':
-      if (count >= 2) {
-        strengths.push('학문적 재능과 명예운이 있습니다');
-        strengths.push('보호받고 도움받는 운이 있습니다');
-        advice.push('학업이나 연구 분야에서 성공할 수 있습니다');
-      } else if (count === 1) {
-        strengths.push('안정적인 학습력과 지혜가 있습니다');
+      if (count >= 1.5) {
+        strengths.push(`${modifier} 학문적 재능과 명예운이 있습니다`);
+        if (count >= 3) {
+          strengths.push('보호받고 도움받는 운이 매우 강합니다');
+          advice.push('학업이나 연구 분야에서 큰 성공을 거둘 수 있습니다');
+        } else {
+          strengths.push('보호받고 도움받는 운이 있습니다');
+          advice.push('학업이나 연구 분야에서 성공할 수 있습니다');
+        }
+      } else if (count >= 0.5) {
+        strengths.push(`${modifier} 학습력과 지혜가 있습니다`);
       } else {
         weaknesses.push('학습 의욕이나 보호운이 약할 수 있습니다');
         advice.push('꾸준한 학습과 자기개발을 하세요');
@@ -380,6 +487,7 @@ export function interpretTenGod(tenGod: TenGod, count: number): TenGodInterpreta
   return {
     tenGod,
     count,
+    intensity,
     strengths,
     weaknesses,
     advice,
