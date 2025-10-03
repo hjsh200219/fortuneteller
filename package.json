@@ -3,6 +3,7 @@
   "version": "1.1.0",
   "description": "한국 전통 사주팔자 운세 분석을 위한 MCP(Model Context Protocol) 서버",
   "main": "dist/index.js",
+  "module": "./src/index.ts",
   "type": "module",
   "bin": {
     "saju-mcp-server": "dist/index.js"
