@@ -1,7 +1,7 @@
 name: saju-mcp-server
 displayName: 사주 운세 MCP 서버
 description: 한국 전통 사주팔자를 기반으로 운세를 분석하는 MCP 서버 | Korean traditional Saju (Four Pillars of Destiny) fortune-telling MCP server
-version: 1.0.0
+version: 1.1.1
 author: Hoshin
 license: MIT
 homepage: https://github.com/hjsh200219/fortuneteller
@@ -9,6 +9,9 @@ repository: https://github.com/hjsh200219/fortuneteller
 
 # 런타임 설정
 runtime: typescript
+
+# Entry point 명시
+entryPoint: ./src/index.ts
 
 # 시작 명령어
 startCommand:
