@@ -32,7 +32,8 @@
       "Bash(do echo \"=== $file ===\")",
       "Bash(done)",
       "Bash(smithery search:*)",
-      "Bash(smithery login:*)"
+      "Bash(smithery login:*)",
+      "Bash(git revert:*)"
     ],
     "deny": [],
     "ask": []
