@@ -30,7 +30,9 @@
       "Bash(grep:*)",
       "Bash(for file in src/tools/*.ts)",
       "Bash(do echo \"=== $file ===\")",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(smithery search:*)",
+      "Bash(smithery login:*)"
     ],
     "deny": [],
     "ask": []
