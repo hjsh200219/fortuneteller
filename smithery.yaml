@@ -7,6 +7,16 @@ license: MIT
 homepage: https://github.com/hjsh200219/fortuneteller
 repository: https://github.com/hjsh200219/fortuneteller
 
+# 런타임 설정
+runtime: typescript
+
+# 시작 명령어
+startCommand:
+  command: npx
+  args:
+    - "-y"
+    - "@hoshin/saju-mcp-server"
+
 # 카테고리
 categories:
   - fortune-telling
