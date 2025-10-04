@@ -1,11 +1,9 @@
-# Node modules
+# Node modules (재설치)
 node_modules/
 npm-debug.log
 
-# 소스 파일 (빌드된 파일만 사용)
-src/
-*.ts
-!*.d.ts
+# 빌드 결과물 (Docker에서 다시 빌드)
+dist/
 
 # 테스트
 **/__tests__/
@@ -14,11 +12,9 @@ src/
 jest.config.js
 coverage/
 
-# 개발 도구
+# 개발 도구 (tsconfig.json은 빌드에 필요하므로 유지)
 .eslintrc.*
 .prettierrc
-tsconfig.json
-tsconfig.*.json
 
 # Git
 .git/

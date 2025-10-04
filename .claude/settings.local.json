@@ -33,7 +33,10 @@
       "Bash(done)",
       "Bash(smithery search:*)",
       "Bash(smithery login:*)",
-      "Bash(git revert:*)"
+      "Bash(git revert:*)",
+      "Bash(npx -y @smithery/cli build -o .smithery/index.cjs)",
+      "Bash(npx:*)",
+      "Bash(docker build:*)"
     ],
     "deny": [],
     "ask": []

@@ -8,17 +8,16 @@ homepage: https://github.com/hjsh200219/fortuneteller
 repository: https://github.com/hjsh200219/fortuneteller
 
 # 런타임 설정
-runtime: typescript
+runtime: node
 
-# Entry point 명시
-entryPoint: ./src/index.ts
+# Entry point 명시 (Docker CMD에서 사용)
+entryPoint: dist/index.js
 
 # 시작 명령어
 startCommand:
-  command: npx
+  command: node
   args:
-    - "-y"
-    - "@hoshin/saju-mcp-server"
+    - "dist/index.js"
 
 # 카테고리
 categories:

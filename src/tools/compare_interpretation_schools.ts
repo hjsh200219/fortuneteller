@@ -50,7 +50,7 @@ export async function compareInterpretationSchools(
     );
 
     // 비교할 유파 (기본: 모두)
-    const schools: SchoolCode[] = params.schools || ['ziping', 'dts', 'qtbj', 'modern', 'shensha'];
+    const schools: SchoolCode[] = (params.schools || ['ziping', 'dts', 'qtbj', 'modern', 'shensha']) as SchoolCode[];
 
     // 현재 설정
     const settings = InterpretationSettings.getInstance().getSettings();

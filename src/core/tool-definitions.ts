@@ -267,7 +267,7 @@ export const TOOL_DEFINITIONS: Tool[] = [
       properties: {
         preset: {
           type: 'string',
-          enum: ['ziping', 'dts', 'gtbg', 'modern', 'sinsal', 'balanced'],
+          enum: ['ziping', 'dts', 'qtbj', 'modern', 'shensha', 'balanced'],
           description: '프리셋 선택',
         },
         custom: {
@@ -275,9 +275,9 @@ export const TOOL_DEFINITIONS: Tool[] = [
           properties: {
             ziping: { type: 'number', minimum: 0, maximum: 1 },
             dts: { type: 'number', minimum: 0, maximum: 1 },
-            gtbg: { type: 'number', minimum: 0, maximum: 1 },
+            qtbj: { type: 'number', minimum: 0, maximum: 1 },
             modern: { type: 'number', minimum: 0, maximum: 1 },
-            sinsal: { type: 'number', minimum: 0, maximum: 1 },
+            shensha: { type: 'number', minimum: 0, maximum: 1 },
           },
         },
       },
@@ -306,7 +306,7 @@ export const TOOL_DEFINITIONS: Tool[] = [
           type: 'array',
           items: {
             type: 'string',
-            enum: ['ziping', 'dts', 'gtbg', 'modern', 'sinsal'],
+            enum: ['ziping', 'dts', 'qtbj', 'modern', 'shensha'],
           },
           description: '비교할 유파 목록 (미지정시 전체)',
         },
