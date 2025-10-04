@@ -37,7 +37,8 @@
       "Bash(npx -y @smithery/cli build -o .smithery/index.cjs)",
       "Bash(npx:*)",
       "Bash(docker build:*)",
-      "Bash(npm search @smithery/sdk)"
+      "Bash(npm search @smithery/sdk)",
+      "Bash(git rm:*)"
     ],
     "deny": [],
     "ask": []

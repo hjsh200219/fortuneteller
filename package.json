@@ -55,6 +55,7 @@
   "homepage": "https://github.com/hjsh200219/fortuneteller#readme",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.18.2",
+    "@smithery/sdk": "^1.6.8",
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
     "zod": "^3.25.76"
