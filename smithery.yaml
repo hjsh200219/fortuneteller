@@ -7,17 +7,14 @@ license: MIT
 homepage: https://github.com/hjsh200219/fortuneteller
 repository: https://github.com/hjsh200219/fortuneteller
 
-# 런타임 설정
-runtime: node
+# 런타임 설정 (Docker 컨테이너 사용)
+runtime: container
 
-# Entry point 명시 (Docker CMD에서 사용)
-entryPoint: dist/index.js
-
-# 시작 명령어
+# 시작 명령어 (stdio 타입)
 startCommand:
-  command: node
-  args:
-    - "dist/index.js"
+  type: stdio
+  commandFunction: |
+    node dist/index.js
 
 # 카테고리
 categories:
