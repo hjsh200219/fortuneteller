@@ -7,11 +7,13 @@ license: MIT
 homepage: https://github.com/hjsh200219/fortuneteller
 repository: https://github.com/hjsh200219/fortuneteller
 
-# 런타임 설정
-runtime: typescript
+# 런타임 설정 (커스텀 Dockerfile 사용)
+runtime: container
 
-# Entry point
-entryPoint: ./src/index.ts
+# 시작 명령어 (stdio 통신)
+startCommand:
+  type: stdio
+  commandFunction: node dist/index.js
 
 # 카테고리
 categories:
