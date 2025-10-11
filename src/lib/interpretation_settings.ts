@@ -167,7 +167,7 @@ export class InterpretationSettings {
    */
   async saveToFile(path: string): Promise<void> {
     try {
-      const json = JSON.stringify(this.settings, null, 2);
+      const json = JSON.stringify(this.settings);
       await writeFile(path, json, 'utf-8');
     } catch (error) {
       throw new Error(`Failed to save settings: ${error instanceof Error ? error.message : String(error)}`);
