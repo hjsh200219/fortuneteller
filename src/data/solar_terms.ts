@@ -1,9 +1,21 @@
 /**
- * 24절기(二十四節氣) 데이터
+ * 24절기(二十四節氣) 통합 테이블 (1900-2200)
  * 사주 계산에서 월주를 정하는데 중요한 기준
+ *
+ * 연도별 테이블:
+ * - 1900-2019: solar_terms_1900_2019.ts (Jean Meeus 알고리즘)
+ * - 2020-2030: solar_terms_complete.ts (Jean Meeus 알고리즘)
+ * - 2031-2100: solar_terms_2031_2100.ts (Jean Meeus 알고리즘)
+ * - 2101-2200: solar_terms_2101_2200.ts (Jean Meeus 알고리즘)
  */
 
 import type { SolarTerm } from '../types/index.js';
+import { SOLAR_TERMS_1900_2019, type SolarTermComplete } from './solar_terms_1900_2019.js';
+import { SOLAR_TERMS_COMPLETE } from './solar_terms_complete.js';
+import { SOLAR_TERMS_2031_2100 } from './solar_terms_2031_2100.js';
+import { SOLAR_TERMS_2101_2200 } from './solar_terms_2101_2200.js';
+
+export type { SolarTermComplete };
 
 export interface SolarTermData {
   name: SolarTerm;
@@ -80,7 +92,97 @@ export const SOLAR_TERM_APPROXIMATE_DATES: Record<SolarTerm, [number, number]> =
 };
 
 /**
- * 특정 날짜가 어느 절기와 절기 사이인지 판단
+ * 연도별 절기 데이터 조회 (자동 분기)
+ */
+export function getSolarTermsForYear(year: number): SolarTermComplete[] {
+  // 1900-2019
+  if (year >= 1900 && year <= 2019) {
+    return SOLAR_TERMS_1900_2019.filter((data) => data.year === year);
+  }
+
+  // 2020-2030
+  if (year >= 2020 && year <= 2030) {
+    return SOLAR_TERMS_COMPLETE.filter((data) => data.year === year);
+  }
+
+  // 2031-2100
+  if (year >= 2031 && year <= 2100) {
+    return SOLAR_TERMS_2031_2100.filter((data) => data.year === year);
+  }
+
+  // 2101-2200
+  if (year >= 2101 && year <= 2200) {
+    return SOLAR_TERMS_2101_2200.filter((data) => data.year === year);
+  }
+
+  return [];
+}
+
+/**
+ * 특정 날짜에 가장 가까운 절기 조회 (정밀)
+ */
+export function getNearestSolarTerm(date: Date): SolarTermComplete | null {
+  const year = date.getFullYear();
+  const timestamp = date.getTime();
+
+  const yearTerms = getSolarTermsForYear(year);
+  const prevYearTerms = getSolarTermsForYear(year - 1);
+  const nextYearTerms = getSolarTermsForYear(year + 1);
+
+  // 전년도 마지막 절기들 + 올해 절기들 + 다음년도 초기 절기들
+  const allTerms = [...prevYearTerms.slice(-3), ...yearTerms, ...nextYearTerms.slice(0, 3)];
+
+  if (allTerms.length === 0) {
+    return null;
+  }
+
+  // 가장 가까운 절기 찾기
+  let nearest = allTerms[0]!;
+  let minDiff = Math.abs(timestamp - nearest.timestamp);
+
+  for (const term of allTerms) {
+    const diff = Math.abs(timestamp - term.timestamp);
+    if (diff < minDiff) {
+      minDiff = diff;
+      nearest = term;
+    }
+  }
+
+  return nearest;
+}
+
+/**
+ * 특정 날짜가 어느 절기와 절기 사이인지 판단 (정밀)
+ */
+export function getCurrentSolarTermPrecise(date: Date): SolarTerm {
+  const year = date.getFullYear();
+  const timestamp = date.getTime();
+
+  const yearTerms = getSolarTermsForYear(year);
+  const prevYearTerms = getSolarTermsForYear(year - 1);
+
+  // 전년도 마지막 절기 포함 (연초 계산용)
+  const allTerms = [...prevYearTerms.slice(-2), ...yearTerms];
+
+  if (allTerms.length === 0) {
+    return '입춘'; // 기본값
+  }
+
+  // 현재 시각 이전의 가장 최근 절기 찾기
+  let currentTerm = allTerms[0]!;
+  for (const term of allTerms) {
+    if (term.timestamp <= timestamp) {
+      currentTerm = term;
+    } else {
+      break;
+    }
+  }
+
+  return currentTerm.term;
+}
+
+/**
+ * 특정 날짜가 어느 절기와 절기 사이인지 판단 (근사)
  */
 export function getCurrentSolarTerm(date: Date): SolarTerm {
   const month = date.getMonth() + 1;

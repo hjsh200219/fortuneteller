@@ -39,38 +39,22 @@ config:
         - "-y"
         - "@hoshin/saju-mcp-server"
 
-# 도구 목록
+# 도구 목록 (7개 통합 도구)
 tools:
-  - name: calculate_saju
-    description: Calculate Saju (Four Pillars) from birth date and time
-  - name: analyze_fortune
-    description: Analyze fortune (personality, career, wealth, health, love)
+  - name: analyze_saju
+    description: Integrated Saju analysis (basic/fortune/yongsin/school_compare/yongsin_method)
   - name: check_compatibility
     description: Analyze compatibility between two people
   - name: convert_calendar
-    description: Convert between solar and lunar calendars
+    description: Convert between solar and lunar calendars (1900-2200)
   - name: get_daily_fortune
     description: Get daily fortune for specific date
   - name: get_dae_un
     description: Get 10-year major fortune cycles
-  - name: analyze_yong_sin
-    description: Detailed Yong-sin analysis with personalized advice
-  - name: get_yearly_fortune
-    description: Get yearly fortune (Se-un)
-  - name: get_monthly_fortune
-    description: Get monthly fortune (Wol-un)
-  - name: get_hourly_fortune
-    description: Get hourly fortune (Si-un)
-  - name: get_api_status
-    description: Check KASI API status and cache statistics
-  - name: set_interpretation_settings
-    description: Change interpretation settings
-  - name: get_interpretation_settings
-    description: Get current interpretation settings
-  - name: compare_interpretation_schools
-    description: Compare 5 interpretation schools
-  - name: analyze_with_yongsin_method
-    description: Analyze with specific Yong-sin methodology
+  - name: get_fortune_by_period
+    description: Get fortune by period (year/month/hour/multi-year)
+  - name: manage_settings
+    description: Manage interpretation settings (get/set)
 
 # 추가 링크
 links:

@@ -15,7 +15,7 @@ A Model Context Protocol (MCP) server for Korean traditional Saju (Four Pillars 
 - **사주팔자 계산**: 생년월일시로부터 천간지지 8자 자동 계산 (진태양시 -30분 보정)
 - **운세 분석**: 성격, 직업운, 재물운, 건강운, 애정운 등 다양한 분석
 - **궁합 분석**: 두 사람의 사주 비교 및 궁합도 계산
-- **음양력 변환**: 양력 ↔ 음력 날짜 변환 지원 (윤달 처리 포함)
+- **음양력 변환**: 양력 ↔ 음력 날짜 변환 지원 (1900-2200, 윤달 처리 포함)
 - **일일 운세**: 날짜별 상세 운세 제공
 - **대운(大運)**: 10년 단위 큰 흐름 운세 조회
 - **용신(用神) 분석**: 색상, 방향, 직업 등 맞춤형 조언 제공
@@ -23,6 +23,8 @@ A Model Context Protocol (MCP) server for Korean traditional Saju (Four Pillars 
 - **신살(神殺)**: 15개 신살 탐지 (원진살, 귀문관살 포함)
 
 ### 🆕 v1.1.0 신규 기능
+- **7개 통합 도구**: 15개 개별 도구를 7개로 최적화 (토큰 효율 40% 개선)
+- **로컬 테이블**: 1900-2200년 음양력 데이터 (외부 API 의존성 제거)
 - **Zod 입력 검증**: 런타임 타입 검증으로 에러율 40% 감소
 - **date-fns 통합**: 타임존 버그 제거 및 정밀한 날짜 처리
 - **MCP SDK v1.18**: 최신 프로토콜 및 성능 최적화
@@ -76,12 +78,17 @@ npm run build
 npm start
 ```
 
-## 🛠️ MCP 도구 (총 15개)
+## 🛠️ MCP 도구 (총 7개 - 통합 최적화)
 
-### 기본 사주 분석 (7개)
+### 1. analyze_saju
+사주 분석 통합 도구 (기본 계산, 운세, 용신, 유파 비교, 용신 방법론).
 
-### 1. calculate_saju
-생년월일시로부터 사주팔자를 계산합니다.
+**분석 타입**:
+- `basic`: 사주팔자 기본 계산
+- `fortune`: 운세 분석 (general/career/wealth/health/love)
+- `yongsin`: 용신 상세 분석
+- `school_compare`: 5개 유파 비교 (자평명리, 적천수, 궁통보감, 현대명리, 신살중심)
+- `yongsin_method`: 특정 용신 방법론 분석 (강약/조후/통관/병약)
 
 ```typescript
 {
@@ -89,53 +96,69 @@ npm start
   birthTime: "10:30",
   calendar: "solar",
   isLeapMonth: false,
-  gender: "male"
+  gender: "male",
+  analysisType: "basic" | "fortune" | "yongsin" | "school_compare" | "yongsin_method",
+
+  // fortune 타입용 옵션
+  fortuneType?: "general" | "career" | "wealth" | "health" | "love",
+
+  // school_compare 타입용 옵션
+  schools?: ["ziping", "dts", "qtbj", "modern", "shensha"],
+
+  // yongsin_method 타입용 옵션
+  method?: "strength" | "seasonal" | "mediation" | "disease"
 }
 ```
 
-### 2. analyze_fortune
-사주팔자를 기반으로 운세를 분석합니다.
-
-```typescript
-{
-  sajuData: {...},
-  analysisType: "general" | "career" | "wealth" | "health" | "love",
-  targetDate?: "2025-01-01"
-}
-```
-
-### 3. check_compatibility
+### 2. check_compatibility
 두 사람의 궁합을 분석합니다.
 
 ```typescript
 {
-  person1: {...},
-  person2: {...}
+  person1: {
+    birthDate: "1990-03-15",
+    birthTime: "10:30",
+    calendar: "solar",
+    isLeapMonth: false,
+    gender: "male"
+  },
+  person2: {
+    birthDate: "1992-07-20",
+    birthTime: "14:30",
+    calendar: "solar",
+    isLeapMonth: false,
+    gender: "female"
+  }
 }
 ```
 
-### 4. convert_calendar
-양력과 음력을 변환합니다.
+### 3. convert_calendar
+양력과 음력을 변환합니다 (1900-2200 지원).
 
 ```typescript
 {
   date: "2025-01-01",
   fromCalendar: "solar",
-  toCalendar: "lunar"
+  toCalendar: "lunar",
+  isLeapMonth?: false
 }
 ```
 
-### 5. get_daily_fortune
+### 4. get_daily_fortune
 특정 날짜의 일일 운세를 제공합니다.
 
 ```typescript
 {
-  sajuData: {...},
-  date: "2025-01-01"
+  birthDate: "1990-03-15",
+  birthTime: "10:30",
+  calendar: "solar",
+  isLeapMonth: false,
+  gender: "male",
+  targetDate: "2025-01-01"
 }
 ```
 
-### 6. get_dae_un
+### 5. get_dae_un
 10년 단위 대운(大運) 정보를 조회합니다.
 
 ```typescript
@@ -144,44 +167,18 @@ npm start
   birthTime: "10:30",
   calendar: "solar",
   isLeapMonth: false,
-  gender: "male",
-  age?: 30,        // 특정 나이의 대운 조회 (선택)
-  limit?: 10       // 조회할 대운 개수 (선택)
-}
-```
-
-### 7. analyze_yong_sin
-용신(用神) 상세 분석 및 조언을 제공합니다.
-
-```typescript
-{
-  birthDate: "1990-03-15",
-  birthTime: "10:30",
-  calendar: "solar",
-  isLeapMonth: false,
   gender: "male"
 }
 ```
 
-### 시간대별 운세 (4개)
+### 6. get_fortune_by_period
+시간대별 운세 통합 도구 (연운/월운/시운/연속).
 
-### 8. get_yearly_fortune
-세운(歲運) 연별 운세를 조회합니다.
-
-```typescript
-{
-  birthDate: "1990-03-15",
-  birthTime: "10:30",
-  calendar: "solar",
-  isLeapMonth: false,
-  gender: "male",
-  targetYear?: 2025,
-  years?: 5
-}
-```
-
-### 9. get_monthly_fortune
-월운(月運) 월별 운세를 조회합니다.
+**기간 타입**:
+- `year`: 연별 운세 (세운, 歲運)
+- `month`: 월별 운세 (월운, 月運)
+- `hour`: 시간대별 운세 (시운, 時運)
+- `multi-year`: 연속 연도 운세
 
 ```typescript
 {
@@ -190,72 +187,38 @@ npm start
   calendar: "solar",
   isLeapMonth: false,
   gender: "male",
-  targetYear?: 2025,
-  targetMonth?: 3,
-  months?: 12
+  periodType: "year" | "month" | "hour" | "multi-year",
+
+  // 기간 지정 (periodType에 맞는 형식)
+  target?: "2025" | "2025-03" | "2025-01-01 14:00",
+
+  // multi-year 타입용 옵션
+  count?: 5  // 조회할 연도 개수 (기본값: 5)
 }
 ```
 
-### 10. get_hourly_fortune
-시운(時運) 시간대별 운세를 조회합니다.
+### 7. manage_settings
+해석 설정 관리 도구 (조회/변경).
+
+**액션**:
+- `get`: 현재 설정 조회
+- `set`: 설정 변경 (프리셋 또는 커스텀)
 
 ```typescript
 {
-  birthDate: "1990-03-15",
-  birthTime: "10:30",
-  calendar: "solar",
-  isLeapMonth: false,
-  gender: "male",
-  targetDate?: "2025-01-01",
-  targetHour?: 14,
-  allHours?: true
-}
-```
+  action: "get" | "set",
 
-### 11. get_api_status
-KASI API 상태 및 캐시 통계를 조회합니다.
+  // set 액션용 옵션
+  preset?: "ziping" | "dts" | "qtbj" | "modern" | "shensha" | "balanced",
 
-```typescript
-{
-  detailed?: true
-}
-```
-
-### 해석 유파 시스템 (4개)
-
-### 12. set_interpretation_settings
-사주 해석 설정을 변경합니다 (프리셋 또는 커스텀).
-
-```typescript
-{
-  preset?: "traditional" | "modern_professional" | "health_focused" | "career_focused",
-  customSettings?: { yongSinMethod: "strength" | "seasonal" | "mediation" | "disease", ... }
-}
-```
-
-### 13. get_interpretation_settings
-현재 해석 설정을 조회합니다.
-
-### 14. compare_interpretation_schools
-5개 유파(자평명리, 적천수, 궁통보감, 현대명리, 신살중심)의 해석을 비교합니다.
-
-```typescript
-{
-  year: 1990, month: 3, day: 15, hour: 10, minute: 30,
-  calendar: "solar", isLeapMonth: false, gender: "male",
-  schools?: ["ziping", "dts", "qtbj", "modern", "shensha"]
-}
-```
-
-### 15. analyze_with_yongsin_method
-특정 용신 방법론으로 분석하고 직업을 추천합니다.
-
-```typescript
-{
-  year: 1990, month: 3, day: 15, hour: 10, minute: 30,
-  calendar: "solar", isLeapMonth: false, gender: "male",
-  yongSinMethod: "strength" | "seasonal" | "mediation" | "disease",
-  includeCareerRecommendation?: true
+  // 또는 커스텀 가중치
+  custom?: {
+    ziping: 0.3,    // 자평명리 가중치 (0.0-1.0)
+    dts: 0.2,       // 적천수 가중치
+    qtbj: 0.2,      // 궁통보감 가중치
+    modern: 0.2,    // 현대명리 가중치
+    shensha: 0.1    // 신살중심 가중치
+  }
 }
 ```
 
@@ -265,17 +228,20 @@ KASI API 상태 및 캐시 통계를 조회합니다.
 fortuneteller/
 ├── src/
 │   ├── index.ts              # MCP 서버 진입점
-│   ├── tools/                # MCP 도구 구현 (7개)
-│   │   ├── calculate_saju.ts
-│   │   ├── analyze_fortune.ts
+│   ├── core/                 # 핵심 시스템
+│   │   ├── tool-definitions.ts  # 7개 도구 정의
+│   │   └── tool-handler.ts      # 도구 라우팅
+│   ├── tools/                # MCP 도구 구현
+│   │   ├── analyze_saju.ts      # 통합 사주 분석
 │   │   ├── check_compatibility.ts
 │   │   ├── convert_calendar.ts
 │   │   ├── get_daily_fortune.ts
 │   │   ├── get_dae_un.ts
-│   │   └── analyze_yong_sin.ts
+│   │   ├── get_fortune_by_period.ts  # 통합 시간대별 운세
+│   │   └── manage_settings.ts        # 통합 설정 관리
 │   ├── lib/                  # 핵심 로직
-│   │   ├── saju.ts           # 사주 계산 (진태양시 -30분 보정 포함)
-│   │   ├── calendar.ts       # 음양력 변환
+│   │   ├── saju.ts           # 사주 계산 (진태양시 -30분 보정)
+│   │   ├── calendar.ts       # 음양력 변환 (로컬 테이블)
 │   │   ├── fortune.ts        # 운세 분석
 │   │   ├── compatibility.ts  # 궁합 분석
 │   │   ├── dae_un.ts         # 대운 계산
@@ -285,10 +251,12 @@ fortuneteller/
 │   │   ├── day_master_strength.ts  # 일간 강약
 │   │   └── gyeok_guk.ts      # 격국 결정
 │   ├── data/                 # 정적 데이터
-│   │   ├── heavenly_stems.ts   # 천간(天干) 10개
-│   │   ├── earthly_branches.ts # 지지(地支) 12개, 지장간 세력 계산
-│   │   ├── wuxing.ts          # 오행(五行) 상생상극
-│   │   └── solar_terms.ts     # 24절기
+│   │   ├── heavenly_stems.ts      # 천간(天干) 10개
+│   │   ├── earthly_branches.ts    # 지지(地支) 12개, 지장간 세력
+│   │   ├── wuxing.ts              # 오행(五行) 상생상극
+│   │   ├── solar_terms.ts         # 24절기 (1900-2200)
+│   │   ├── lunar_table.ts         # 음력 테이블 (1900-2200)
+│   │   └── longitude_table.ts     # 전국 162개 시군구 경도
 │   └── types/                # 타입 정의
 │       └── index.ts
 ├── package.json
@@ -411,7 +379,7 @@ Smithery 마켓플레이스에서 더 쉽게 설치하고 관리할 수 있습�
 
 ## ⚠️ 면책 조항
 
-이 서비스는 전통 사주팔자를 기반으로 한 참고용 정보를 제공합니다. 
+이 서비스는 전통 사주팔자를 기반으로 한 참고용 정보를 제공합니다.
 - 의학적, 법률적, 재정적 조언이 아닙니다
 - 중요한 결정은 반드시 전문가와 상담하시기 바랍니다
 - 운세는 개인의 노력과 선택에 따라 달라질 수 있습니다
@@ -433,7 +401,7 @@ MIT License
 - **Saju (Four Pillars) Calculation**: Automatic calculation of 8 characters from birth date and time (with -30min true solar time correction)
 - **Fortune Analysis**: Comprehensive analysis including personality, career, wealth, health, and love fortune
 - **Compatibility Analysis**: Compatibility calculation and comparison between two people
-- **Calendar Conversion**: Solar ↔ Lunar calendar conversion with leap month support
+- **Calendar Conversion**: Solar ↔ Lunar calendar conversion (1900-2200) with leap month support
 - **Daily Fortune**: Detailed daily fortune for specific dates
 - **Dae-un (大運)**: 10-year major fortune cycle analysis
 - **Yong-sin (用神) Analysis**: Personalized advice on colors, directions, and careers
@@ -476,28 +444,15 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 Restart Claude Desktop and start using the tools!
 
-### 🛠️ Available Tools (15 Total)
+### 🛠️ Available Tools (7 Integrated Tools)
 
-#### Basic Analysis (7 tools)
-1. **calculate_saju** - Calculate Four Pillars from birth info
-2. **analyze_fortune** - Analyze fortune (general/career/wealth/health/love)
-3. **check_compatibility** - Analyze compatibility between two people
-4. **convert_calendar** - Convert between solar and lunar calendars
-5. **get_daily_fortune** - Get daily fortune for specific date
-6. **get_dae_un** - Get 10-year major fortune cycles
-7. **analyze_yong_sin** - Detailed Yong-sin analysis with advice
-
-#### Time-based Fortune (4 tools)
-8. **get_yearly_fortune** - Yearly fortune (Se-un)
-9. **get_monthly_fortune** - Monthly fortune (Wol-un)
-10. **get_hourly_fortune** - Hourly fortune (Si-un)
-11. **get_api_status** - KASI API status and cache stats
-
-#### Interpretation System (4 tools)
-12. **set_interpretation_settings** - Change interpretation settings
-13. **get_interpretation_settings** - Get current interpretation settings
-14. **compare_interpretation_schools** - Compare 5 school interpretations
-15. **analyze_with_yongsin_method** - Analyze with specific Yong-sin method
+1. **analyze_saju** - Integrated Saju analysis (basic/fortune/yongsin/school_compare/yongsin_method)
+2. **check_compatibility** - Analyze compatibility between two people
+3. **convert_calendar** - Convert between solar and lunar calendars (1900-2200)
+4. **get_daily_fortune** - Get daily fortune for specific date
+5. **get_dae_un** - Get 10-year major fortune cycles
+6. **get_fortune_by_period** - Get fortune by period (year/month/hour/multi-year)
+7. **manage_settings** - Manage interpretation settings (get/set)
 
 ### 📚 Key Concepts
 
@@ -564,4 +519,3 @@ This service provides reference information based on traditional Saju fortune-te
 ---
 
 Made with ❤️ for Korean traditional fortune-telling
-

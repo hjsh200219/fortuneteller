@@ -35,36 +35,23 @@ npm run format
 ## MCP 서버 아키텍처
 
 ### 진입점
-[src/index.ts](src/index.ts) - `@modelcontextprotocol/sdk`로 15개 도구가 등록된 MCP 서버
+[src/index.ts](src/index.ts) - `@modelcontextprotocol/sdk`로 7개 통합 도구가 등록된 MCP 서버
 
 ### 도구 등록 패턴
 1. `src/tools/*.ts`에서 핸들러 import
-2. `ListToolsRequestSchema` 핸들러에 도구 스키마 등록
+2. `core/tool-definitions.ts`에 도구 스키마 등록
 3. `CallToolRequestSchema` switch문에서 도구 호출 라우팅
 4. `{ content: [{ type: 'text', text: result }] }` 형태로 반환
 
-### 15개 MCP 도구
+### 7개 통합 MCP 도구
 
-#### 기본 사주 분석 (7개)
-1. **calculate_saju** - 생년월일시로부터 사주팔자 계산
-2. **analyze_fortune** - 전반/직업/재물/건강/애정 운세 분석
-3. **check_compatibility** - 두 사람의 궁합 분석
-4. **convert_calendar** - 양력 ↔ 음력 변환
-5. **get_daily_fortune** - 특정 날짜의 일일 운세
-6. **get_dae_un** - 10년 단위 대운(大運) 조회
-7. **analyze_yong_sin** - 용신 상세 분석 및 조언(색상, 방향, 직업 등)
-
-#### 시간대별 운세 (4개)
-8. **get_yearly_fortune** - 세운(歲運) 연별 운세
-9. **get_monthly_fortune** - 월운(月運) 월별 운세
-10. **get_hourly_fortune** - 시운(時運) 시간대별 운세
-11. **get_api_status** - KASI API 상태 및 캐시 통계
-
-#### 해석 유파 시스템 (4개)
-12. **set_interpretation_settings** - 해석 설정 변경 (프리셋/커스텀)
-13. **get_interpretation_settings** - 현재 해석 설정 조회
-14. **compare_interpretation_schools** - 5개 유파 비교 분석 (자평명리, 적천수, 궁통보감, 현대명리, 신살중심)
-15. **analyze_with_yongsin_method** - 특정 용신 방법론으로 분석 (강약용신, 조후용신, 통관용신, 병약용신)
+1. **analyze_saju** - 사주 분석 통합 (basic/fortune/yongsin/school_compare/yongsin_method)
+2. **check_compatibility** - 두 사람의 궁합 분석
+3. **convert_calendar** - 양력 ↔ 음력 변환 (로컬 테이블 1900-2200)
+4. **get_daily_fortune** - 특정 날짜의 일일 운세
+5. **get_dae_un** - 10년 단위 대운(大運) 조회
+6. **get_fortune_by_period** - 시간대별 운세 (year/month/hour/multi-year)
+7. **manage_settings** - 해석 설정 관리 (get/set)
 
 ## 핵심 아키텍처 패턴
 
@@ -111,8 +98,20 @@ const adjustedDate = new Date(date.getTime() - 30 * 60 * 1000);
 - [heavenly_stems.ts](src/data/heavenly_stems.ts) - 10개 천간(天干)과 오행, 음양
 - [earthly_branches.ts](src/data/earthly_branches.ts) - 12개 지지(地支)와 지장간 매핑
 - [wuxing.ts](src/data/wuxing.ts) - 오행(五行) 관계(상생/상극/설기)
-- [solar_terms.ts](src/data/solar_terms.ts) - 달력 계산용 24절기(節氣)
+- [solar_terms.ts](src/data/solar_terms.ts) - 24절기(節氣) 통합 (1900-2200, 4개 테이블 자동 분기)
+- [lunar_table.ts](src/data/lunar_table.ts) - 음력 테이블 통합 (1900-2200, 4개 테이블 자동 분기)
+- [longitude_table.ts](src/data/longitude_table.ts) - 전국 162개 시군구 경도 데이터
 - [modern_careers.ts](src/data/modern_careers.ts) - 500+ 현대 직업 데이터베이스 (십성/오행 매핑, 원격근무/글로벌 기회 포함)
+
+**연도별 데이터 테이블**:
+- [lunar_table_1900_2019.ts](src/data/lunar_table_1900_2019.ts) - 음력 데이터 (1900-2019)
+- [lunar_table_extended.ts](src/data/lunar_table_extended.ts) - 음력 데이터 (2020-2030)
+- [lunar_table_2031_2100.ts](src/data/lunar_table_2031_2100.ts) - 음력 데이터 (2031-2100)
+- [lunar_table_2101_2200.ts](src/data/lunar_table_2101_2200.ts) - 음력 데이터 (2101-2200)
+- [solar_terms_1900_2019.ts](src/data/solar_terms_1900_2019.ts) - 절기 데이터 (1900-2019)
+- [solar_terms_complete.ts](src/data/solar_terms_complete.ts) - 절기 데이터 (2020-2030)
+- [solar_terms_2031_2100.ts](src/data/solar_terms_2031_2100.ts) - 절기 데이터 (2031-2100)
+- [solar_terms_2101_2200.ts](src/data/solar_terms_2101_2200.ts) - 절기 데이터 (2101-2200)
 
 ### 분석 라이브러리 (`src/lib/`)
 
@@ -199,10 +198,57 @@ const adjustedDate = new Date(date.getTime() - 30 * 60 * 1000);
 
 ### 새 MCP 도구 추가하기
 1. `src/tools/new_tool.ts`에 타입 인터페이스와 함께 핸들러 생성
-2. [src/index.ts](src/index.ts)에 핸들러 import
-3. `ListToolsRequestSchema` 응답에 도구 스키마 추가
-4. `CallToolRequestSchema` switch문에 case 추가
+2. [src/core/tool-definitions.ts](src/core/tool-definitions.ts)의 `TOOL_DEFINITIONS` 배열에 도구 스키마 추가
+3. [src/core/tool-handler.ts](src/core/tool-handler.ts)의 `handleToolCall()` switch문에 case 추가
+4. [src/tools/index.ts](src/tools/index.ts)에서 핸들러 export
 5. 재빌드 및 테스트
+
+**예시**:
+```typescript
+// 1. src/tools/new_tool.ts
+export interface NewToolArgs {
+  param1: string;
+  param2?: number;
+}
+
+export function handleNewTool(args: NewToolArgs): string {
+  const { param1, param2 = 10 } = args;
+  // 로직 구현
+  return JSON.stringify({ result: '...' }, null, 2);
+}
+
+// 2. src/core/tool-definitions.ts
+export const TOOL_DEFINITIONS: Tool[] = [
+  // ... 기존 도구들
+  {
+    name: 'new_tool',
+    description: '새로운 도구 설명',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        param1: { type: 'string', description: '파라미터 1' },
+        param2: { type: 'number', default: 10 },
+      },
+      required: ['param1'],
+    },
+  },
+];
+
+// 3. src/core/tool-handler.ts
+import { handleNewTool } from '../tools/index.js';
+
+export async function handleToolCall(name: string, args: unknown): Promise<string> {
+  switch (name) {
+    // ... 기존 case들
+    case 'new_tool':
+      return handleNewTool(args as Parameters<typeof handleNewTool>[0]);
+    // ...
+  }
+}
+
+// 4. src/tools/index.ts
+export { handleNewTool } from './new_tool.js';
+```
 
 ### MCP 도구 개발 시 주의사항
 
@@ -323,11 +369,32 @@ if (targetDateTime) {
 - `getWeakeningElement()` - 이 오행을 설(洩)하는 오행
 
 ### 달력 변환
-[src/lib/calendar.ts](src/lib/calendar.ts)가 윤달을 포함한 음양력 변환을 처리합니다:
+[src/lib/calendar.ts](src/lib/calendar.ts)가 윤달을 포함한 음양력 변환을 처리합니다 (로컬 테이블 기반, 1900-2200):
 
 ```typescript
+// 동기 함수로 변경됨 (KASI API 제거)
 const result = convertCalendar('2025-01-01', 'solar', 'lunar');
-// 반환값: { convertedDate, isLeapMonth }
+// 반환값: {
+//   originalDate: string,
+//   originalCalendar: CalendarType,
+//   convertedDate: string,
+//   convertedCalendar: CalendarType,
+//   isLeapMonth?: boolean,
+//   solarTerm: SolarTerm
+// }
+```
+
+**로컬 테이블 직접 사용**:
+```typescript
+import { solarToLunarLocal, lunarToSolarLocal } from '../data/lunar_table.js';
+
+// 양력 → 음력
+const lunar = solarToLunarLocal(2025, 1, 1);
+// 반환값: { year, month, day, isLeapMonth } | null
+
+// 음력 → 양력
+const solar = lunarToSolarLocal(2025, 1, 1, false);
+// 반환값: { year, month, day } | null
 ```
 
 ## 사주 용어

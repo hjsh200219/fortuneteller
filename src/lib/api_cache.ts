@@ -3,6 +3,16 @@
  * 음양력 변환 결과를 메모리에 캐싱하여 API 호출 최소화
  */
 
+/**
+ * 음양력 변환 결과 타입
+ */
+export interface CalendarConversionResult {
+  year: number;
+  month: number;
+  day: number;
+  isLeapMonth?: boolean;
+}
+
 export interface CacheEntry<T> {
   data: T;
   timestamp: number;
@@ -204,10 +214,8 @@ export function generateCacheKey(
 }
 
 // 싱글톤 캐시 인스턴스
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const solarToLunarCache = new LRUCache<any>(1000, 86400000); // 24시간
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const lunarToSolarCache = new LRUCache<any>(1000, 86400000); // 24시간
+export const solarToLunarCache = new LRUCache<CalendarConversionResult>(1000, 86400000); // 24시간
+export const lunarToSolarCache = new LRUCache<CalendarConversionResult>(1000, 86400000); // 24시간
 
 /**
  * 캐시 정리 스케줄러 (1시간마다)

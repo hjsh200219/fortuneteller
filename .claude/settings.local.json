@@ -39,7 +39,9 @@
       "Bash(docker build:*)",
       "Bash(npm search @smithery/sdk)",
       "Bash(git rm:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(for:*)",
+      "Bash(head -1 tail -30 \"$file\")"
     ],
     "deny": [],
     "ask": []

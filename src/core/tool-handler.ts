@@ -13,7 +13,6 @@ import {
   handleGetDailyFortune,
   handleGetDaeUn,
   handleGetFortuneByPeriod,
-  handleGetApiStatus,
 } from '../tools/index.js';
 
 /**
@@ -41,9 +40,6 @@ export async function handleToolCall(name: string, args: unknown): Promise<strin
 
     case 'get_fortune_by_period':
       return handleGetFortuneByPeriod(args as Parameters<typeof handleGetFortuneByPeriod>[0]);
-
-    case 'get_api_status':
-      return handleGetApiStatus(args as Parameters<typeof handleGetApiStatus>[0]);
 
     default:
       throw new Error(`알 수 없는 도구: ${name}`);

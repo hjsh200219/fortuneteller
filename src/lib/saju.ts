@@ -7,7 +7,7 @@ import { getHeavenlyStemByIndex } from '../data/heavenly_stems.js';
 import { getEarthlyBranchByIndex, analyzeBranchRelations, checkWolRyeong, calculateJiJangGanStrength } from '../data/earthly_branches.js';
 import { getCurrentSolarTerm, getSolarTermMonthIndex } from '../data/solar_terms.js';
 import { WUXING_DATA } from '../data/wuxing.js';
-import { convertCalendarSync } from './calendar.js';
+import { convertCalendar } from './calendar.js';
 import { calculateTenGodsDistribution, generateTenGodsList } from './ten_gods.js';
 import { findSinSals } from './sin_sal.js';
 import { analyzeDayMasterStrength } from './day_master_strength.js';
@@ -32,10 +32,10 @@ export function calculateSaju(
     return cached as SajuData;
   }
 
-  // 음력을 양력으로 변환 (동기 버전 사용)
+  // 음력을 양력으로 변환
   let solarDate = birthDate;
   if (calendar === 'lunar') {
-    const conversion = convertCalendarSync(birthDate, 'lunar', 'solar');
+    const conversion = convertCalendar(birthDate, 'lunar', 'solar');
     solarDate = conversion.convertedDate;
   }
 

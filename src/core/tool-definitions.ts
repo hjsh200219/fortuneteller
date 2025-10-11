@@ -1,6 +1,6 @@
 /**
  * MCP 도구 정의 - 최적화 버전
- * 13개 → 7개 도구로 통합
+ * 로컬 테이블 기반 (KASI API 제거)
  */
 
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
@@ -160,14 +160,6 @@ export const TOOL_DEFINITIONS: Tool[] = [
         },
       },
       required: ['action'],
-    },
-  },
-  {
-    name: 'get_api_status',
-    description: 'KASI API 상태',
-    inputSchema: {
-      type: 'object',
-      properties: {},
     },
   },
 ];
