@@ -36,6 +36,14 @@ A Model Context Protocol (MCP) server for Korean traditional Saju (Four Pillars 
 
 ### 설치
 
+##### Installing via Smithery
+
+To install saju-mcp-server automatically via [Smithery](https://smithery.ai/server/saju-mcp-server):
+
+```bash
+npx -y @smithery/cli install saju-mcp-server --client claude
+```
+
 #### 자동 설치 스크립트 (가장 간편)
 
 ```bash
@@ -203,7 +211,6 @@ npm start
 {
   birthDate: "1990-03-15",
   birthTime: "10:30",
-  calendar: "solar",
   isLeapMonth: false,
   gender: "male",
   targetDate?: "2025-01-01",
@@ -340,7 +347,7 @@ npm run docs:serve
 
 #### 전역 설치 후 사용
 
-```bash
+```
 npm install -g @hoshin/saju-mcp-server
 ```
 
@@ -411,7 +418,7 @@ Smithery 마켓플레이스에서 더 쉽게 설치하고 관리할 수 있습�
 
 ## ⚠️ 면책 조항
 
-이 서비스는 전통 사주팔자를 기반으로 한 참고용 정보를 제공합니다. 
+이 서비스는 전통 사주팔자를 기반으로 한 참고용 정보를 제공합니다.
 - 의학적, 법률적, 재정적 조언이 아닙니다
 - 중요한 결정은 반드시 전문가와 상담하시기 바랍니다
 - 운세는 개인의 노력과 선택에 따라 달라질 수 있습니다
@@ -443,6 +450,14 @@ MIT License
 ### 🚀 Quick Start
 
 #### Installation
+
+##### Installing via Smithery
+
+To install saju-mcp-server automatically via [Smithery](https://smithery.ai/server/saju-mcp-server)
+
+```bash
+npx @smithery/cli install saju-mcp-server --client claude
+```
 
 **Option 1: Automatic Installation Script (Recommended)**
 ```bash
@@ -532,7 +547,7 @@ docker-compose up -d
 
 ```bash
 # Install via Smithery CLI
-npx @smithery/cli install saju-mcp-server --client claude
+npx @smithery/cli install saju-mcp-server
 ```
 
 Easier installation and management through Smithery marketplace.
