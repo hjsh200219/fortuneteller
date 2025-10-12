@@ -41,7 +41,9 @@
       "Bash(git rm:*)",
       "Bash(find:*)",
       "Bash(for:*)",
-      "Bash(head -1 tail -30 \"$file\")"
+      "Bash(head -1 tail -30 \"$file\")",
+      "Bash(npm publish:*)",
+      "Bash(npm login)"
     ],
     "deny": [],
     "ask": []

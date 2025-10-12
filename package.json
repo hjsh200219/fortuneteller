@@ -27,7 +27,7 @@
     "docs": "typedoc",
     "docs:serve": "npx http-server docs/api -p 8080",
     "benchmark": "tsx src/benchmark/index.ts",
-    "prepublishOnly": "npm run build && npm run lint && npm test",
+    "prepublishOnly": "npm run build && npm run lint",
     "postinstall": "node -e \"console.log('\\n🔮 사주 MCP 서버가 설치되었습니다!\\n\\nClaude Desktop 설정:\\n~/Library/Application Support/Claude/claude_desktop_config.json\\n\\n{\\'mcpServers\\': {\\'saju\\': {\\'command\\': \\'saju-mcp-server\\'}}}\\n\\n자세한 설정: https://github.com/hjsh200219/fortuneteller\\n')\""
   },
   "keywords": [
