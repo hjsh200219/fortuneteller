@@ -146,13 +146,18 @@ export function lunarToSolarLocal(
   let elapsedDays = 0;
 
   for (let m = 1; m < month; m++) {
-    const monthIndex = yearData.leapMonth > 0 && m > yearData.leapMonth ? m : m - 1;
-    elapsedDays += yearData.monthDays[monthIndex]!;
+    // m월의 평달 일수 추가
+    elapsedDays += yearData.monthDays[m - 1]!;
+
+    // 윤달이 m월이면 윤달 일수도 추가
+    if (yearData.leapMonth === m) {
+      elapsedDays += yearData.monthDays[yearData.leapMonth]!;
+    }
   }
 
-  // 윤달 처리
+  // 윤달 처리: 조회하는 달이 윤달인 경우 평달 일수도 추가
   if (isLeapMonth && yearData.leapMonth === month) {
-    elapsedDays += yearData.monthDays[month - 1]!; // 평달 일수 추가
+    elapsedDays += yearData.monthDays[month - 1]!;
   }
 
   elapsedDays += day - 1;
