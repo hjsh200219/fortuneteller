@@ -194,6 +194,27 @@ const adjustedDate = new Date(date.getTime() - 30 * 60 * 1000);
 }
 ```
 
+### 지연 로딩 모드 활성화
+도구 스키마를 Tool Discovery 요청 시에만 로드하려면 환경 변수를 설정:
+
+```json
+{
+  "mcpServers": {
+    "saju": {
+      "command": "node",
+      "args": ["/Users/hoshin/workspace/fortuneteller/dist/index.js"],
+      "env": {
+        "SAJU_LAZY_LOAD_SCHEMAS": "true"
+      }
+    }
+  }
+}
+```
+
+**지연 로딩 모드**:
+- `false` (기본값): 서버 시작 시 모든 도구 스키마 로드
+- `true`: Tool Discovery 요청 시에만 스키마 생성 (메모리 효율적)
+
 ## 일반적인 구현 패턴
 
 ### 새 MCP 도구 추가하기

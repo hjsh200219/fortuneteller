@@ -13,13 +13,26 @@ import {
   type ListToolsRequest,
 } from '@modelcontextprotocol/sdk/types.js';
 
-import { TOOL_DEFINITIONS } from './tool-definitions.js';
+import { TOOL_DEFINITIONS, AVAILABLE_TOOLS, getToolSchema } from './tool-definitions.js';
 import { handleToolCall } from './tool-handler.js';
+
+/**
+ * 서버 설정 옵션
+ */
+export interface ServerOptions {
+  /**
+   * 지연 로딩 모드
+   * - false: 시작 시 모든 도구 스키마 로드 (기본값)
+   * - true: Tool Discovery 요청 시에만 스키마 로드
+   */
+  lazyLoadSchemas?: boolean;
+}
 
 /**
  * MCP 서버 인스턴스 생성
  */
-export function createMCPServer(): Server {
+export function createMCPServer(options: ServerOptions = {}): Server {
+  const { lazyLoadSchemas = false } = options;
   const server = new Server(
     {
       name: 'saju-mcp',
@@ -34,9 +47,14 @@ export function createMCPServer(): Server {
 
   // 도구 목록 핸들러 등록
   server.setRequestHandler(ListToolsRequestSchema, async (_request: ListToolsRequest) => {
-    return {
-      tools: TOOL_DEFINITIONS,
-    };
+    if (lazyLoadSchemas) {
+      // 지연 로딩: 요청 시 스키마 생성
+      const tools = AVAILABLE_TOOLS.map((name) => getToolSchema(name)!);
+      return { tools };
+    } else {
+      // 즉시 로딩: 미리 생성된 스키마 사용
+      return { tools: TOOL_DEFINITIONS };
+    }
   });
 
   // 도구 호출 핸들러 등록

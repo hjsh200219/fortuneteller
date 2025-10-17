@@ -8,6 +8,7 @@ import { getHeavenlyStemByIndex } from '../data/heavenly_stems.js';
 import { getEarthlyBranchByIndex } from '../data/earthly_branches.js';
 import { getPreviousSolarTerm, getNextSolarTerm } from '../data/solar_terms_precise.js';
 import { daeUnCache, generateDaeUnCacheKey } from './performance_cache.js';
+import { getManselyeokDaeUnStartAge } from '../data/daeun_reference_table.js';
 
 export interface DaeUnPeriod {
   startAge: number;
@@ -106,53 +107,72 @@ export function getDaeUnAtAge(
 }
 
 /**
- * 대운 시작 나이 계산 (정밀 계산)
- * 출생일부터 다음/이전 절기까지의 일수를 3으로 나눔
- * 3일 = 1년, 즉 1일 = 4개월
+ * 대운 시작 나이 계산 (만세력 기준 - 정통 계산법)
+ * 
+ * 만세력 전통 공식:
+ * - 3일 = 1년 (12개월)
+ * - 1일 = 4개월
+ * - 1시진(2시간) = 10일
+ * - 1시간 = 5일 = 20개월
+ * 
+ * 출처: 명리정종, 적천수 등 전통 명리서
  */
 function calculateDaeUnStartAge(sajuData: SajuData): number {
+  // 만세력 기준: 출생일시를 정확히 반영
   const birthDate = new Date(sajuData.birthDate);
+  const [hours, minutes] = sajuData.birthTime.split(':').map(Number);
+  birthDate.setHours(hours!, minutes!, 0, 0);
+  
   const isForward = isDaeUnForward(sajuData);
 
   let targetSolarTerm;
-  let daysDifference: number;
-
+  
   if (isForward) {
     // 순행: 출생 후 다음 절기까지
     targetSolarTerm = getNextSolarTerm(birthDate);
 
     if (!targetSolarTerm) {
-      // 절기 데이터가 없으면 기본값 사용
       console.warn('다음 절기 데이터를 찾을 수 없습니다. 기본값 5세를 사용합니다.');
       return 5;
     }
 
     const termDate = new Date(targetSolarTerm.datetime);
-    daysDifference = Math.floor((termDate.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24));
+    const timeDifference = termDate.getTime() - birthDate.getTime();
+    
+    // 만세력 정밀 계산: 일, 시, 분 단위로 분리
+    const totalMilliseconds = timeDifference;
+    const totalMinutes = totalMilliseconds / (1000 * 60);
+    const totalHours = totalMinutes / 60;
+    const days = Math.floor(totalHours / 24);
+    const remainingHours = Math.floor(totalHours % 24);
+    const remainingMinutes = Math.floor(totalMinutes % 60);
+    
+    // 만세력 공식 적용
+    return getManselyeokDaeUnStartAge(days, remainingHours, remainingMinutes);
+    
   } else {
     // 역행: 출생 전 이전 절기까지
     targetSolarTerm = getPreviousSolarTerm(birthDate);
 
     if (!targetSolarTerm) {
-      // 절기 데이터가 없으면 기본값 사용
       console.warn('이전 절기 데이터를 찾을 수 없습니다. 기본값 5세를 사용합니다.');
       return 5;
     }
 
     const termDate = new Date(targetSolarTerm.datetime);
-    daysDifference = Math.floor((birthDate.getTime() - termDate.getTime()) / (1000 * 60 * 60 * 24));
+    const timeDifference = birthDate.getTime() - termDate.getTime();
+    
+    // 만세력 정밀 계산: 일, 시, 분 단위로 분리
+    const totalMilliseconds = timeDifference;
+    const totalMinutes = totalMilliseconds / (1000 * 60);
+    const totalHours = totalMinutes / 60;
+    const days = Math.floor(totalHours / 24);
+    const remainingHours = Math.floor(totalHours % 24);
+    const remainingMinutes = Math.floor(totalMinutes % 60);
+    
+    // 만세력 공식 적용
+    return getManselyeokDaeUnStartAge(days, remainingHours, remainingMinutes);
   }
-
-  // 3일 = 1년, 즉 1일 = 4개월
-  const years = Math.floor(daysDifference / 3);
-  const remainingDays = daysDifference % 3;
-  const months = remainingDays * 4;
-
-  // 반올림하여 정수 나이로 반환 (6개월 이상이면 올림)
-  const startAge = years + (months >= 6 ? 1 : 0);
-
-  // 최소 0세, 최대 10세로 제한
-  return Math.max(0, Math.min(10, startAge));
 }
 
 /**

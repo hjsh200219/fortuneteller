@@ -8,13 +8,23 @@
  */
 
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { createMCPServer } from './core/server.js';
+import { createMCPServer, type ServerOptions } from './core/server.js';
+
+/**
+ * 환경 변수에서 서버 옵션 로드
+ */
+function loadServerOptions(): ServerOptions {
+  // 환경 변수 SAJU_LAZY_LOAD_SCHEMAS=true로 지연 로딩 활성화
+  const lazyLoadSchemas = process.env.SAJU_LAZY_LOAD_SCHEMAS === 'true';
+  return { lazyLoadSchemas };
+}
 
 /**
  * 서버 시작
  */
 async function main() {
-  const server = createMCPServer();
+  const options = loadServerOptions();
+  const server = createMCPServer(options);
   const transport = new StdioServerTransport();
   await server.connect(transport);
 

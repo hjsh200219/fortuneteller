@@ -1,12 +1,16 @@
 /**
- * MCP 도구 정의 - 최적화 버전
+ * MCP 도구 정의 - 지연 로딩 버전
  * 로컬 테이블 기반 (KASI API 제거)
  */
 
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 
-export const TOOL_DEFINITIONS: Tool[] = [
-  {
+/**
+ * 도구 스키마 팩토리 함수들
+ * 각 도구는 필요할 때만 스키마를 생성합니다
+ */
+const toolSchemaFactories: Record<string, () => Tool> = {
+  analyze_saju: () => ({
     name: 'analyze_saju',
     description: '사주 분석 통합 (basic/fortune/yongsin/school_compare/yongsin_method)',
     inputSchema: {
@@ -40,8 +44,9 @@ export const TOOL_DEFINITIONS: Tool[] = [
       },
       required: ['birthDate', 'birthTime', 'gender', 'analysisType'],
     },
-  },
-  {
+  }),
+
+  check_compatibility: () => ({
     name: 'check_compatibility',
     description: '두 사람 궁합 분석',
     inputSchema: {
@@ -72,8 +77,9 @@ export const TOOL_DEFINITIONS: Tool[] = [
       },
       required: ['person1', 'person2'],
     },
-  },
-  {
+  }),
+
+  convert_calendar: () => ({
     name: 'convert_calendar',
     description: '양력↔음력 변환',
     inputSchema: {
@@ -86,8 +92,9 @@ export const TOOL_DEFINITIONS: Tool[] = [
       },
       required: ['date', 'fromCalendar', 'toCalendar'],
     },
-  },
-  {
+  }),
+
+  get_daily_fortune: () => ({
     name: 'get_daily_fortune',
     description: '일일 운세',
     inputSchema: {
@@ -102,8 +109,9 @@ export const TOOL_DEFINITIONS: Tool[] = [
       },
       required: ['birthDate', 'birthTime', 'gender', 'targetDate'],
     },
-  },
-  {
+  }),
+
+  get_dae_un: () => ({
     name: 'get_dae_un',
     description: '10년 대운',
     inputSchema: {
@@ -117,8 +125,9 @@ export const TOOL_DEFINITIONS: Tool[] = [
       },
       required: ['birthDate', 'birthTime', 'gender'],
     },
-  },
-  {
+  }),
+
+  get_fortune_by_period: () => ({
     name: 'get_fortune_by_period',
     description: '시간대별 운세 (year/month/hour/multi-year)',
     inputSchema: {
@@ -139,8 +148,9 @@ export const TOOL_DEFINITIONS: Tool[] = [
       },
       required: ['birthDate', 'birthTime', 'gender', 'periodType'],
     },
-  },
-  {
+  }),
+
+  manage_settings: () => ({
     name: 'manage_settings',
     description: '해석 설정 관리 (get/set)',
     inputSchema: {
@@ -161,5 +171,41 @@ export const TOOL_DEFINITIONS: Tool[] = [
       },
       required: ['action'],
     },
-  },
-];
+  }),
+};
+
+/**
+ * 사용 가능한 도구 이름 목록
+ */
+export const AVAILABLE_TOOLS = Object.keys(toolSchemaFactories);
+
+/**
+ * 특정 도구의 스키마를 로드합니다
+ */
+export function getToolSchema(toolName: string): Tool | undefined {
+  const factory = toolSchemaFactories[toolName];
+  return factory ? factory() : undefined;
+}
+
+/**
+ * 여러 도구의 스키마를 한 번에 로드합니다
+ */
+export function getToolSchemas(toolNames: string[]): Tool[] {
+  return toolNames
+    .map((name) => getToolSchema(name))
+    .filter((schema): schema is Tool => schema !== undefined);
+}
+
+/**
+ * 모든 도구 스키마를 로드합니다 (하위 호환성)
+ * @deprecated 가능하면 getToolSchemas()를 사용하세요
+ */
+export function getAllToolDefinitions(): Tool[] {
+  return AVAILABLE_TOOLS.map((name) => getToolSchema(name)!);
+}
+
+/**
+ * 하위 호환성을 위한 전체 도구 정의
+ * 지연 로딩을 사용하려면 getToolSchema() 또는 getToolSchemas()를 사용하세요
+ */
+export const TOOL_DEFINITIONS: Tool[] = getAllToolDefinitions();
