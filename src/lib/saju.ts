@@ -219,17 +219,17 @@ function calculateMonthPillar(date: Date, yearPillar: Pillar): Pillar {
 
 /**
  * 일주(日柱) 계산
- * 정확한 기준일: 1900년 1월 1일 = 병자일(丙子日)
+ * 정확한 기준일: 1900년 1월 1일 = 갑술일(甲戌日)
  */
 function calculateDayPillar(date: Date): Pillar {
-  // 기준일: 1900년 1월 1일 = 병자일 (stemIndex=2, branchIndex=0)
+  // 기준일: 1900년 1월 1일 = 갑술일 (stemIndex=0, branchIndex=10)
   const baseDate = new Date(1900, 0, 1);
   const diffDays = Math.floor((date.getTime() - baseDate.getTime()) / (1000 * 60 * 60 * 24));
 
   // 60갑자 순환
-  // 병(丙) = 2, 자(子) = 0에서 시작
-  const stemIndex = (2 + diffDays) % 10;
-  const branchIndex = (0 + diffDays) % 12;
+  // 갑(甲) = 0, 술(戌) = 10에서 시작
+  const stemIndex = (0 + diffDays) % 10;
+  const branchIndex = (10 + diffDays) % 12;
 
   const stem = getHeavenlyStemByIndex(stemIndex);
   const branch = getEarthlyBranchByIndex(branchIndex);
