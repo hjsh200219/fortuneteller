@@ -196,14 +196,35 @@ function calculateMonthPillar(date: Date, yearPillar: Pillar): Pillar {
   // 월지 계산: 인월부터 시작 (입춘)
   const branchIndex = (monthIndex + 2) % 12; // 인(寅)월부터
 
-  // 월간 계산: 연간에 따라 결정
-  // 갑기년은 병인월부터 시작
+  // 월간 계산: 연간에 따라 결정 (전통적인 월간 기산법)
   const yearStem = getHeavenlyStemByIndex(
     ['갑', '을', '병', '정', '무', '기', '경', '신', '임', '계'].indexOf(yearPillar.stem)
   );
 
-  // 월간 공식: (연간 × 2 + 월지) % 10
-  const stemIndex = (yearStem.index * 2 + branchIndex) % 10;
+  const yearStemIndex = yearStem.index;
+  let monthStemStart: number;
+
+  // 연간에 따른 월간 시작점 결정
+  if (yearStemIndex === 0 || yearStemIndex === 5) { 
+    // 갑년(甲), 기년(己): 병인월(丙寅月)부터
+    monthStemStart = 2; // 병(丙)
+  } else if (yearStemIndex === 1 || yearStemIndex === 6) { 
+    // 을년(乙), 경년(庚): 무인월(戊寅月)부터
+    monthStemStart = 4; // 무(戊)
+  } else if (yearStemIndex === 2 || yearStemIndex === 7) { 
+    // 병년(丙), 신년(辛): 경인월(庚寅月)부터
+    monthStemStart = 6; // 경(庚)
+  } else if (yearStemIndex === 3 || yearStemIndex === 8) { 
+    // 정년(丁), 임년(壬): 임인월(壬寅月)부터
+    monthStemStart = 8; // 임(壬)
+  } else { 
+    // 무년(戊), 계년(癸): 갑인월(甲寅月)부터
+    monthStemStart = 0; // 갑(甲)
+  }
+
+  // 인월(寅月, 지지 인덱스 2)부터 시작하므로, 월수 차이를 계산
+  const monthOffset = branchIndex >= 2 ? branchIndex - 2 : branchIndex + 10;
+  const stemIndex = (monthStemStart + monthOffset) % 10;
 
   const stem = getHeavenlyStemByIndex(stemIndex);
   const branch = getEarthlyBranchByIndex(branchIndex);

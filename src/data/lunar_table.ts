@@ -146,8 +146,14 @@ export function lunarToSolarLocal(
   let elapsedDays = 0;
 
   for (let m = 1; m < month; m++) {
-    // m월의 평달 일수 추가
-    elapsedDays += yearData.monthDays[m - 1]!;
+    // 배열 인덱스 계산 (윤달 이후 달은 인덱스 +1 조정)
+    let arrayIndex = m - 1;
+    if (yearData.leapMonth > 0 && m > yearData.leapMonth) {
+      arrayIndex = m; // 윤달 이후 달은 배열에서 한 칸 뒤에 위치
+    }
+
+    // m월의 일수 추가
+    elapsedDays += yearData.monthDays[arrayIndex]!;
 
     // 윤달이 m월이면 윤달 일수도 추가
     if (yearData.leapMonth === m) {
@@ -157,7 +163,11 @@ export function lunarToSolarLocal(
 
   // 윤달 처리: 조회하는 달이 윤달인 경우 평달 일수도 추가
   if (isLeapMonth && yearData.leapMonth === month) {
-    elapsedDays += yearData.monthDays[month - 1]!;
+    let arrayIndex = month - 1;
+    if (yearData.leapMonth > 0 && month > yearData.leapMonth) {
+      arrayIndex = month;
+    }
+    elapsedDays += yearData.monthDays[arrayIndex]!;
   }
 
   elapsedDays += day - 1;
