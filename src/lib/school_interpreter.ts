@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 유파별 해석기 인터페이스
  * School Interpreter Interface
  */

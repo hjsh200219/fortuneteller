@@ -3,8 +3,9 @@
  * PRD Priority 2.2: 날짜 처리 라이브러리 통합
  */
 
-import { parseISO, format, addMinutes, isValid } from 'date-fns';
+import { parseISO, format, addMinutes, isValid, differenceInYears } from 'date-fns';
 import { toDate, fromZonedTime } from 'date-fns-tz';
+import { getLongitudeOffsetMinutesForSaju } from '../data/longitude_table.js';
 
 /**
  * 한국 시간대
@@ -12,9 +13,35 @@ import { toDate, fromZonedTime } from 'date-fns-tz';
 export const KOREA_TIMEZONE = 'Asia/Seoul';
 
 /**
- * 진태양시 보정값 (분)
+ * 출생일시를 대한민국 벽시계 시각으로 해석하여 UTC 시각으로 변환합니다.
+ * IANA `Asia/Seoul` 규칙을 사용하므로 1948~1960·1987~1988 일광절약시간(썸머타임) 구간이 반영됩니다.
+ * 입력은 당시 기록된 시계 시각(표준시+1h로 앞당겨졌던 시기)을 그대로 넣는 것을 가정합니다.
+ */
+export function parseBirthDateTimeKorea(birthDate: string, birthTime: string): Date {
+  const d = toDate(`${birthDate}T${birthTime}:00`, { timeZone: KOREA_TIMEZONE });
+  if (isNaN(d.getTime())) {
+    throw new Error(`유효하지 않은 출생일시입니다: ${birthDate} ${birthTime}`);
+  }
+  return d;
+}
+
+/**
+ * 진태양시 보정값 (분) — 레거시 고정값. 사주 계산은 {@link getAdjustedBirthInstantForSaju}의 경도 보정을 사용합니다.
  */
 export const TRUE_SOLAR_TIME_ADJUSTMENT = -30;
+
+/**
+ * 출생 벽시계 시각(썸머타임 반영)에 동경 135° 대비 출생지 경도 보정을 더한 시각(UTC)
+ */
+export function getAdjustedBirthInstantForSaju(
+  solarDate: string,
+  birthTime: string,
+  birthCity?: string
+): Date {
+  const wall = parseBirthDateTimeKorea(solarDate, birthTime);
+  const offsetMin = getLongitudeOffsetMinutesForSaju(birthCity);
+  return addMinutes(wall, offsetMin);
+}
 
 /**
  * ISO 날짜 문자열 파싱
@@ -30,14 +57,23 @@ export function parseISODate(dateString: string): Date {
 }
 
 /**
- * 날짜와 시간을 결합하여 Date 객체 생성
+ * 운이 적용되는 양력 연도(세운·연운 등)의 연말(12/31) 시점 만 나이
+ * 해당 해의 운을 볼 때 표시하는 나이를 통일하기 위해 사용
+ */
+export function getManAgeForFortuneYear(birthDateStr: string, fortuneYear: number): number {
+  const birth = parseISODate(birthDateStr);
+  const yearEnd = new Date(fortuneYear, 11, 31, 23, 59, 59, 999);
+  return Math.max(0, differenceInYears(yearEnd, birth));
+}
+
+/**
+ * 날짜와 시간을 결합하여 Date 객체 생성 (대한민국 역사 시각·썸머타임 반영)
  * @param dateStr - 날짜 문자열 (YYYY-MM-DD)
  * @param timeStr - 시간 문자열 (HH:mm)
  * @returns Date 객체
  */
 export function combineDateAndTime(dateStr: string, timeStr: string): Date {
-  const isoString = `${dateStr}T${timeStr}:00`;
-  return parseISODate(isoString);
+  return parseBirthDateTimeKorea(dateStr, timeStr);
 }
 
 /**
@@ -69,18 +105,16 @@ export function applyTrueSolarTimeAdjustment(date: Date): Date {
 
 /**
  * 사주 계산용 날짜 준비
- * 1. 날짜와 시간 결합
- * 2. 한국 시간대 적용
- * 3. 진태양시 보정
+ * 1. 출생일시를 Asia/Seoul 벽시계 시각으로 해석(썸머타임 구간 포함)
+ * 2. 출생지 경도 보정(한국 표준시 동경 135° 대비)
  *
  * @param dateStr - 날짜 문자열 (YYYY-MM-DD)
  * @param timeStr - 시간 문자열 (HH:mm)
+ * @param birthCity - 출생 시군구명 (longitude_table 키, 예: 서울). 생략 시 서울
  * @returns 사주 계산에 사용할 Date 객체
  */
-export function prepareSajuDate(dateStr: string, timeStr: string): Date {
-  const combined = combineDateAndTime(dateStr, timeStr);
-  const koreaTime = toKoreaTime(combined);
-  return applyTrueSolarTimeAdjustment(koreaTime);
+export function prepareSajuDate(dateStr: string, timeStr: string, birthCity?: string): Date {
+  return getAdjustedBirthInstantForSaju(dateStr, timeStr, birthCity);
 }
 
 /**

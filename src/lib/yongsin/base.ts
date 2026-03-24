@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 용신 알고리즘 기본 인터페이스
  * Base interface for YongSin algorithms
  */

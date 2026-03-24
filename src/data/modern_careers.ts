@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 현대 직업 데이터베이스 (500+ 직업)
  * Modern Career Database
  *

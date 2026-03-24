@@ -106,7 +106,8 @@ export const LUNAR_TABLE_1900_2019: LunarYearData[] = [
   { year: 1976, leapMonth: 8, monthDays: [30, 29, 30, 29, 30, 29, 30, 29, 29, 30, 29, 30, 29], totalDays: 383, solarNewYear: '1976-01-31' },
   { year: 1977, leapMonth: 0, monthDays: [30, 29, 30, 29, 30, 29, 30, 30, 29, 30, 29, 30], totalDays: 355, solarNewYear: '1977-02-18' },
   { year: 1978, leapMonth: 0, monthDays: [29, 30, 29, 29, 30, 29, 30, 30, 29, 30, 30, 29], totalDays: 354, solarNewYear: '1978-02-07' },
-  { year: 1979, leapMonth: 6, monthDays: [30, 29, 30, 29, 29, 30, 29, 30, 29, 30, 30, 30, 29], totalDays: 384, solarNewYear: '1979-01-28' },
+  // 3월 일수 KASI 기준 보정(30→29), 연말 29→30으로 총일수 384 유지 — 음력 4/27 ↔ 양력 5/22 등 역산 일치
+  { year: 1979, leapMonth: 6, monthDays: [30, 29, 29, 29, 29, 30, 29, 30, 29, 30, 30, 30, 30], totalDays: 384, solarNewYear: '1979-01-28' },
 
   // 1980-1989
   { year: 1980, leapMonth: 0, monthDays: [30, 29, 30, 29, 29, 30, 29, 30, 29, 30, 30, 30], totalDays: 355, solarNewYear: '1980-02-16' },

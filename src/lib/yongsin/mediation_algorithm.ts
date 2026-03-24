@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 통관용신(通關用神) 알고리즘
  * Mediation/Conflict-Resolution YongSin Selection
  *

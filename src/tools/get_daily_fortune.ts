@@ -10,6 +10,7 @@ import type { CalendarType, Gender } from '../types/index.js';
 export interface GetDailyFortuneArgs {
   birthDate: string;
   birthTime: string;
+  birthCity?: string;
   calendar?: CalendarType;
   isLeapMonth?: boolean;
   gender: Gender;
@@ -20,6 +21,7 @@ export function handleGetDailyFortune(args: GetDailyFortuneArgs): string {
   const {
     birthDate,
     birthTime,
+    birthCity,
     calendar = 'solar',
     isLeapMonth = false,
     gender,
@@ -32,7 +34,7 @@ export function handleGetDailyFortune(args: GetDailyFortuneArgs): string {
   }
 
   // 사주 계산
-  const sajuData = calculateSaju(birthDate, birthTime, calendar, isLeapMonth, gender);
+  const sajuData = calculateSaju(birthDate, birthTime, calendar, isLeapMonth, gender, birthCity);
 
   // 일일 운세 생성
   const dailyFortune = getDailyFortune(sajuData, targetDate);

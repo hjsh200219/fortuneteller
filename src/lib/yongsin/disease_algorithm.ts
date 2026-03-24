@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 병약용신(病藥用神) 알고리즘
  * Disease-Cure YongSin Selection
  *

@@ -14,6 +14,7 @@ export type PeriodType = 'year' | 'month' | 'hour' | 'multi-year';
 export interface GetFortuneByPeriodArgs {
   birthDate: string;
   birthTime: string;
+  birthCity?: string;
   calendar?: CalendarType;
   isLeapMonth?: boolean;
   gender: Gender;
@@ -26,6 +27,7 @@ export function handleGetFortuneByPeriod(args: GetFortuneByPeriodArgs): string {
   const {
     birthDate,
     birthTime,
+    birthCity,
     calendar = 'solar',
     isLeapMonth = false,
     gender,
@@ -35,7 +37,7 @@ export function handleGetFortuneByPeriod(args: GetFortuneByPeriodArgs): string {
   } = args;
 
   // 사주 계산
-  const sajuData = calculateSaju(birthDate, birthTime, calendar, isLeapMonth, gender);
+  const sajuData = calculateSaju(birthDate, birthTime, calendar, isLeapMonth, gender, birthCity);
 
   switch (periodType) {
     case 'year': {

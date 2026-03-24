@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 조후용신(調候用神) 알고리즘
  * Seasonal/Climate-Based YongSin Selection
  *

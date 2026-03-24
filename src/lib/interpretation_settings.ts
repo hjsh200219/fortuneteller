@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 해석 설정 관리자
  * Interpretation Settings Manager
  */

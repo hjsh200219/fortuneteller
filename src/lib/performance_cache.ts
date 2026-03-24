@@ -143,18 +143,21 @@ export function generateSajuCacheKey(
   birthTime: string,
   calendar: string,
   isLeapMonth: boolean,
-  gender: string
+  gender: string,
+  birthCity: string
 ): string {
-  return `saju:${birthDate}:${birthTime}:${calendar}:${isLeapMonth}:${gender}`;
+  return `saju:${birthDate}:${birthTime}:${calendar}:${isLeapMonth}:${gender}:${birthCity}`;
 }
 
 export function generateDaeUnCacheKey(
   birthDate: string,
+  birthTime: string,
+  birthCity: string,
   yearStem: string,
   monthStem: string,
   gender: string
 ): string {
-  return `daeun:${birthDate}:${yearStem}:${monthStem}:${gender}`;
+  return `daeun:${birthDate}:${birthTime}:${birthCity}:${yearStem}:${monthStem}:${gender}`;
 }
 
 export function generateYongSinCacheKey(sajuKey: string): string {

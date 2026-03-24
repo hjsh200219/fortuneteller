@@ -15,6 +15,7 @@ export interface CompareSchoolsParams {
   day: number;
   hour: number;
   minute: number;
+  birthCity?: string;
   calendar?: CalendarType;
   isLeapMonth?: boolean;
   gender: Gender;
@@ -46,7 +47,8 @@ export async function compareInterpretationSchools(
       birthTime,
       params.calendar || 'solar',
       params.isLeapMonth || false,
-      params.gender
+      params.gender,
+      params.birthCity
     );
 
     // 비교할 유파 (기본: 모두)

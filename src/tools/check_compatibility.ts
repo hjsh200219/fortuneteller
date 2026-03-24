@@ -9,6 +9,7 @@ import type { CalendarType, Gender } from '../types/index.js';
 export interface PersonInfo {
   birthDate: string;
   birthTime: string;
+  birthCity?: string;
   calendar?: CalendarType;
   isLeapMonth?: boolean;
   gender: Gender;
@@ -28,7 +29,8 @@ export function handleCheckCompatibility(args: CheckCompatibilityArgs): string {
     person1.birthTime,
     person1.calendar || 'solar',
     person1.isLeapMonth || false,
-    person1.gender
+    person1.gender,
+    person1.birthCity
   );
 
   const sajuData2 = calculateSaju(
@@ -36,7 +38,8 @@ export function handleCheckCompatibility(args: CheckCompatibilityArgs): string {
     person2.birthTime,
     person2.calendar || 'solar',
     person2.isLeapMonth || false,
-    person2.gender
+    person2.gender,
+    person2.birthCity
   );
 
   // 궁합 분석

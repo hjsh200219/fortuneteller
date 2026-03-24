@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 강약용신(强弱用神) 알고리즘
  * Strength-Based YongSin Selection
  *

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 해석 유파 기본 프리셋
  * Default interpretation school presets
  */

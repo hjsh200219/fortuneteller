@@ -12,12 +12,18 @@ import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 const toolSchemaFactories: Record<string, () => Tool> = {
   analyze_saju: () => ({
     name: 'analyze_saju',
-    description: '사주 분석 통합 (basic/fortune/yongsin/school_compare/yongsin_method)',
+    description:
+      '사주 분석 통합 (basic/fortune/yongsin/school_compare/yongsin_method). 호출 전 사용자에게 이름(한글)·한자(선택)·양력/음력·생년월일시·윤달(음력 시)·성별·태어난 시군구를 확인할 것. 대화형 상세 해석 문장은 저장소 CLAUDE.md 「명리 해석 프롬프트」 절의 6항목 구조를 따른다.',
     inputSchema: {
       type: 'object',
       properties: {
         birthDate: { type: 'string', description: 'YYYY-MM-DD' },
         birthTime: { type: 'string', description: 'HH:mm' },
+        birthCity: {
+          type: 'string',
+          description:
+            '출생 시군구(한글, longitude_table 키: 서울·부산·대구·제주 등). 호출 전 사용자에게 확인. 생략 시 서울 경도로 경도 보정',
+        },
         calendar: { type: 'string', enum: ['solar', 'lunar'], default: 'solar' },
         isLeapMonth: { type: 'boolean', default: false },
         gender: { type: 'string', enum: ['male', 'female'] },
@@ -48,7 +54,8 @@ const toolSchemaFactories: Record<string, () => Tool> = {
 
   check_compatibility: () => ({
     name: 'check_compatibility',
-    description: '두 사람 궁합 분석',
+    description:
+      '두 사람 궁합 분석. 각 사람마다 이름(한글)·한자(선택)·양력/음력·생년월일시·성별·출생 시군구를 호출 전에 확인할 것.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -57,6 +64,10 @@ const toolSchemaFactories: Record<string, () => Tool> = {
           properties: {
             birthDate: { type: 'string' },
             birthTime: { type: 'string' },
+            birthCity: {
+              type: 'string',
+              description: '출생 시군구(서울·부산 등). 생략 시 서울 경도 보정',
+            },
             calendar: { type: 'string', enum: ['solar', 'lunar'], default: 'solar' },
             isLeapMonth: { type: 'boolean', default: false },
             gender: { type: 'string', enum: ['male', 'female'] },
@@ -68,6 +79,10 @@ const toolSchemaFactories: Record<string, () => Tool> = {
           properties: {
             birthDate: { type: 'string' },
             birthTime: { type: 'string' },
+            birthCity: {
+              type: 'string',
+              description: '출생 시군구(서울·부산 등). 생략 시 서울 경도 보정',
+            },
             calendar: { type: 'string', enum: ['solar', 'lunar'], default: 'solar' },
             isLeapMonth: { type: 'boolean', default: false },
             gender: { type: 'string', enum: ['male', 'female'] },
@@ -96,12 +111,17 @@ const toolSchemaFactories: Record<string, () => Tool> = {
 
   get_daily_fortune: () => ({
     name: 'get_daily_fortune',
-    description: '일일 운세',
+    description:
+      '일일 운세. 호출 전 사용자에게 이름(한글)·한자(선택)·양력/음력·생년월일시·성별·출생 시군구를 확인할 것.',
     inputSchema: {
       type: 'object',
       properties: {
         birthDate: { type: 'string' },
         birthTime: { type: 'string' },
+        birthCity: {
+          type: 'string',
+          description: '출생 시군구(서울·부산 등). 생략 시 서울 경도 보정',
+        },
         calendar: { type: 'string', enum: ['solar', 'lunar'], default: 'solar' },
         isLeapMonth: { type: 'boolean', default: false },
         gender: { type: 'string', enum: ['male', 'female'] },
@@ -113,15 +133,26 @@ const toolSchemaFactories: Record<string, () => Tool> = {
 
   get_dae_un: () => ({
     name: 'get_dae_un',
-    description: '10년 대운',
+    description:
+      '10년 대운 (나이는 만 나이 기준, targetYear는 해당 양력 연도 말일 기준 만 나이로 구간 조회). 호출 전 사용자에게 이름(한글)·한자(선택)·양력/음력·생년월일시·성별·출생 시군구를 확인할 것.',
     inputSchema: {
       type: 'object',
       properties: {
         birthDate: { type: 'string' },
         birthTime: { type: 'string' },
+        birthCity: {
+          type: 'string',
+          description: '출생 시군구(서울·부산 등). 생략 시 서울 경도 보정',
+        },
         calendar: { type: 'string', enum: ['solar', 'lunar'], default: 'solar' },
         isLeapMonth: { type: 'boolean', default: false },
         gender: { type: 'string', enum: ['male', 'female'] },
+        age: { type: 'number', description: '조회할 만 나이(선택). targetYear와 함께 주면 targetYear 우선' },
+        targetYear: {
+          type: 'number',
+          description: '운이 들어오는 양력 연도(선택). 해당 연도 12/31 기준 만 나이로 대운 구간 매칭',
+        },
+        limit: { type: 'number', default: 10, description: '표시할 대운 개수 상한' },
       },
       required: ['birthDate', 'birthTime', 'gender'],
     },
@@ -129,12 +160,17 @@ const toolSchemaFactories: Record<string, () => Tool> = {
 
   get_fortune_by_period: () => ({
     name: 'get_fortune_by_period',
-    description: '시간대별 운세 (year/month/hour/multi-year)',
+    description:
+      '시간대별 운세 (year/month/hour/multi-year). 호출 전 사용자에게 이름(한글)·한자(선택)·양력/음력·생년월일시·성별·출생 시군구를 확인할 것.',
     inputSchema: {
       type: 'object',
       properties: {
         birthDate: { type: 'string' },
         birthTime: { type: 'string' },
+        birthCity: {
+          type: 'string',
+          description: '출생 시군구(서울·부산 등). 생략 시 서울 경도 보정',
+        },
         calendar: { type: 'string', enum: ['solar', 'lunar'], default: 'solar' },
         isLeapMonth: { type: 'boolean', default: false },
         gender: { type: 'string', enum: ['male', 'female'] },

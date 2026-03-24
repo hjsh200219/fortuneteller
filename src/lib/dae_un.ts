@@ -6,9 +6,9 @@
 import type { SajuData, HeavenlyStem, EarthlyBranch, WuXing } from '../types/index.js';
 import { getHeavenlyStemByIndex } from '../data/heavenly_stems.js';
 import { getEarthlyBranchByIndex } from '../data/earthly_branches.js';
-import { getPreviousSolarTerm, getNextSolarTerm } from '../data/solar_terms_precise.js';
+import { getNextJieSolarTermByInstant, getPreviousJieSolarTermByInstant } from '../data/solar_terms.js';
 import { daeUnCache, generateDaeUnCacheKey } from './performance_cache.js';
-import { getManselyeokDaeUnStartAge } from '../data/daeun_reference_table.js';
+import { getAdjustedBirthInstantForSaju } from '../utils/date.js';
 
 export interface DaeUnPeriod {
   startAge: number;
@@ -30,6 +30,8 @@ export function calculateDaeUn(
   // 캐시 체크
   const cacheKey = generateDaeUnCacheKey(
     sajuData.birthDate,
+    sajuData.birthTime,
+    sajuData.birthCity,
     sajuData.year.stem,
     sajuData.month.stem,
     sajuData.gender
@@ -118,10 +120,12 @@ export function getDaeUnAtAge(
  * 출처: 명리정종, 적천수 등 전통 명리서
  */
 function calculateDaeUnStartAge(sajuData: SajuData): number {
-  // 만세력 기준: 출생일시를 정확히 반영
-  const birthDate = new Date(sajuData.birthDate);
-  const [hours, minutes] = sajuData.birthTime.split(':').map(Number);
-  birthDate.setHours(hours!, minutes!, 0, 0);
+  // 만세력 기준: 출생일시를 정확히 반영 (대한민국 벽시계·썸머타임 반영)
+  const birthDate = getAdjustedBirthInstantForSaju(
+    sajuData.birthDate,
+    sajuData.birthTime,
+    sajuData.birthCity
+  );
   
   const isForward = isDaeUnForward(sajuData);
 
@@ -129,7 +133,7 @@ function calculateDaeUnStartAge(sajuData: SajuData): number {
   
   if (isForward) {
     // 순행: 출생 후 다음 절기까지
-    targetSolarTerm = getNextSolarTerm(birthDate);
+    targetSolarTerm = getNextJieSolarTermByInstant(birthDate);
 
     if (!targetSolarTerm) {
       console.warn('다음 절기 데이터를 찾을 수 없습니다. 기본값 5세를 사용합니다.');
@@ -137,22 +141,13 @@ function calculateDaeUnStartAge(sajuData: SajuData): number {
     }
 
     const termDate = new Date(targetSolarTerm.datetime);
+    // 순행: 다음 절(節)까지 경과 일수 → 3일 = 1년(세는 정수, 내림). 시·분을 개월로 넣어 반올림하면 표준 만세력과 어긋남.
     const timeDifference = termDate.getTime() - birthDate.getTime();
-    
-    // 만세력 정밀 계산: 일, 시, 분 단위로 분리
-    const totalMilliseconds = timeDifference;
-    const totalMinutes = totalMilliseconds / (1000 * 60);
-    const totalHours = totalMinutes / 60;
-    const days = Math.floor(totalHours / 24);
-    const remainingHours = Math.floor(totalHours % 24);
-    const remainingMinutes = Math.floor(totalMinutes % 60);
-    
-    // 만세력 공식 적용
-    return getManselyeokDaeUnStartAge(days, remainingHours, remainingMinutes);
-    
+    const totalDays = timeDifference / (1000 * 60 * 60 * 24);
+    return daeUnStartAgeFromThreeDayRule(totalDays);
   } else {
     // 역행: 출생 전 이전 절기까지
-    targetSolarTerm = getPreviousSolarTerm(birthDate);
+    targetSolarTerm = getPreviousJieSolarTermByInstant(birthDate);
 
     if (!targetSolarTerm) {
       console.warn('이전 절기 데이터를 찾을 수 없습니다. 기본값 5세를 사용합니다.');
@@ -160,19 +155,17 @@ function calculateDaeUnStartAge(sajuData: SajuData): number {
     }
 
     const termDate = new Date(targetSolarTerm.datetime);
+    // 역행: 이전 절(節)부터 출생까지 경과 일수 → 3일 = 1년(내림)
     const timeDifference = birthDate.getTime() - termDate.getTime();
-    
-    // 만세력 정밀 계산: 일, 시, 분 단위로 분리
-    const totalMilliseconds = timeDifference;
-    const totalMinutes = totalMilliseconds / (1000 * 60);
-    const totalHours = totalMinutes / 60;
-    const days = Math.floor(totalHours / 24);
-    const remainingHours = Math.floor(totalHours % 24);
-    const remainingMinutes = Math.floor(totalMinutes % 60);
-    
-    // 만세력 공식 적용
-    return getManselyeokDaeUnStartAge(days, remainingHours, remainingMinutes);
+    const totalDays = timeDifference / (1000 * 60 * 60 * 24);
+    return daeUnStartAgeFromThreeDayRule(totalDays);
   }
+}
+
+/** 전통 3일 = 1년: 경과 일(소수 포함)을 3으로 나눈 몫(내림), 0~10세로 제한 */
+function daeUnStartAgeFromThreeDayRule(totalDays: number): number {
+  const years = Math.floor(totalDays / 3);
+  return Math.max(0, Math.min(10, years));
 }
 
 /**

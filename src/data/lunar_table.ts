@@ -11,10 +11,21 @@
  * - 2101-2200: lunar_table_2101_2200.ts
  */
 
+import { formatInTimeZone, toDate } from 'date-fns-tz';
 import { LUNAR_TABLE_1900_2019, type LunarYearData } from './lunar_table_1900_2019.js';
 import { LUNAR_TABLE_EXTENDED } from './lunar_table_extended.js';
 import { LUNAR_TABLE_2031_2100 } from './lunar_table_2031_2100.js';
 import { LUNAR_TABLE_2101_2200 } from './lunar_table_2101_2200.js';
+
+const SEOUL_TZ = 'Asia/Seoul';
+
+/** 대한민국 벽시계 해당 일의 자정(00:00) 순간(UTC) */
+function seoulMidnightDate(year: number, month: number, day: number): Date {
+  return toDate(
+    `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T00:00:00`,
+    { timeZone: SEOUL_TZ }
+  );
+}
 
 export type { LunarYearData };
 
@@ -58,10 +69,9 @@ export function solarToLunarLocal(
     return null; // 테이블에 없는 연도
   }
 
-  // UTC 기준으로 날짜 생성 (타임존 문제 방지)
-  const solarDate = new Date(Date.UTC(year, month - 1, day));
+  const solarDate = seoulMidnightDate(year, month, day);
   const [nyYear, nyMonth, nyDay] = yearData.solarNewYear.split('-').map(Number);
-  const solarNewYear = new Date(Date.UTC(nyYear!, nyMonth! - 1, nyDay!));
+  const solarNewYear = seoulMidnightDate(nyYear!, nyMonth!, nyDay!);
 
   // 음력 1월 1일보다 이전이면 작년 데이터 참조
   if (solarDate < solarNewYear) {
@@ -73,9 +83,9 @@ export function solarToLunarLocal(
     return solarToLunarLocal(year - 1, 12, 31);
   }
 
-  // 경과 일수 계산
+  // 경과 일수(한국 달력 일 단위; 썸머타임 없는 구간은 86400초 일수로 충분)
   const diffTime = solarDate.getTime() - solarNewYear.getTime();
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
   // 음력 월, 일 계산
   let remainingDays = diffDays;
@@ -140,7 +150,8 @@ export function lunarToSolarLocal(
     return null;
   }
 
-  const solarNewYear = new Date(yearData.solarNewYear);
+  const [nyY, nyM, nyD] = yearData.solarNewYear.split('-').map(Number);
+  const solarNewYear = seoulMidnightDate(nyY!, nyM!, nyD!);
 
   // 음력 1월 1일부터의 경과 일수 계산
   let elapsedDays = 0;
@@ -172,13 +183,12 @@ export function lunarToSolarLocal(
 
   elapsedDays += day - 1;
 
-  // 양력 날짜 계산
   const solarDate = new Date(solarNewYear.getTime() + elapsedDays * 24 * 60 * 60 * 1000);
 
   return {
-    year: solarDate.getFullYear(),
-    month: solarDate.getMonth() + 1,
-    day: solarDate.getDate(),
+    year: parseInt(formatInTimeZone(solarDate, SEOUL_TZ, 'yyyy'), 10),
+    month: parseInt(formatInTimeZone(solarDate, SEOUL_TZ, 'M'), 10),
+    day: parseInt(formatInTimeZone(solarDate, SEOUL_TZ, 'd'), 10),
   };
 }
 

@@ -2,18 +2,24 @@
  * 사주팔자 계산 핵심 로직
  */
 
+import { differenceInCalendarDays } from 'date-fns';
+import { formatInTimeZone, toDate } from 'date-fns-tz';
 import type { SajuData, Pillar, Gender, CalendarType, WuXing } from '../types/index.js';
 import { getHeavenlyStemByIndex } from '../data/heavenly_stems.js';
 import { getEarthlyBranchByIndex, analyzeBranchRelations, checkWolRyeong, calculateJiJangGanStrength } from '../data/earthly_branches.js';
 import { getCurrentSolarTerm, getSolarTermMonthIndex } from '../data/solar_terms.js';
 import { WUXING_DATA } from '../data/wuxing.js';
 import { convertCalendar } from './calendar.js';
+import { getAdjustedBirthInstantForSaju } from '../utils/date.js';
+import { resolveBirthCityForSaju } from '../data/longitude_table.js';
 import { calculateTenGodsDistribution, generateTenGodsList } from './ten_gods.js';
 import { findSinSals } from './sin_sal.js';
 import { analyzeDayMasterStrength } from './day_master_strength.js';
 import { determineGyeokGuk } from './gyeok_guk.js';
 import { selectYongSin } from './yong_sin.js';
 import { sajuCache, generateSajuCacheKey } from './performance_cache.js';
+
+const SEOUL_TZ = 'Asia/Seoul';
 
 /**
  * 생년월일시로부터 사주팔자 계산 (캐싱 적용)
@@ -23,10 +29,20 @@ export function calculateSaju(
   birthTime: string,
   calendar: CalendarType,
   isLeapMonth: boolean,
-  gender: Gender
+  gender: Gender,
+  birthCity?: string
 ): SajuData {
+  const resolvedBirthCity = resolveBirthCityForSaju(birthCity);
+
   // 캐시 체크
-  const cacheKey = generateSajuCacheKey(birthDate, birthTime, calendar, isLeapMonth, gender);
+  const cacheKey = generateSajuCacheKey(
+    birthDate,
+    birthTime,
+    calendar,
+    isLeapMonth,
+    gender,
+    resolvedBirthCity
+  );
   const cached = sajuCache.get(cacheKey);
   if (cached) {
     return cached as SajuData;
@@ -39,13 +55,8 @@ export function calculateSaju(
     solarDate = conversion.convertedDate;
   }
 
-  const date = new Date(solarDate);
-  const [hours, minutes] = birthTime.split(':').map(Number);
-  date.setHours(hours!, minutes!);
-
-  // 한국 진태양시 보정 (KST는 UTC+9이지만 실제 천문시와 약 30분 차이)
-  // 사주 계산은 진태양시 기준이므로 30분을 빼야 함
-  const adjustedDate = new Date(date.getTime() - 30 * 60 * 1000);
+  // 출생 벽시계(썸머타임) + 출생지 경도 보정(동경 135° 대비)
+  const adjustedDate = getAdjustedBirthInstantForSaju(solarDate, birthTime, resolvedBirthCity);
 
   // 연주 계산
   const yearPillar = calculateYearPillar(adjustedDate);
@@ -90,6 +101,7 @@ export function calculateSaju(
   const sajuData: SajuData = {
     birthDate,
     birthTime,
+    birthCity: resolvedBirthCity,
     calendar,
     isLeapMonth,
     gender,
@@ -241,16 +253,18 @@ function calculateMonthPillar(date: Date, yearPillar: Pillar): Pillar {
 /**
  * 일주(日柱) 계산
  * 정확한 기준일: 1900년 1월 1일 = 갑술일(甲戌日)
+ * 출생 순간을 대한민국 달력 일(Asia/Seoul)로 두고 기준일과의 일수 차를 쓴다(UTC 일수 나눗셈·서버 타임존 의존 방지).
  */
 function calculateDayPillar(date: Date): Pillar {
-  // 기준일: 1900년 1월 1일 = 갑술일 (stemIndex=0, branchIndex=10)
-  const baseDate = new Date(1900, 0, 1);
-  const diffDays = Math.floor((date.getTime() - baseDate.getTime()) / (1000 * 60 * 60 * 24));
+  const birthKoreaDateStr = formatInTimeZone(date, SEOUL_TZ, 'yyyy-MM-dd');
+  const base = toDate('1900-01-01T12:00:00', { timeZone: SEOUL_TZ });
+  const birth = toDate(`${birthKoreaDateStr}T12:00:00`, { timeZone: SEOUL_TZ });
+  const diffDays = differenceInCalendarDays(birth, base);
 
   // 60갑자 순환
   // 갑(甲) = 0, 술(戌) = 10에서 시작
-  const stemIndex = (0 + diffDays) % 10;
-  const branchIndex = (10 + diffDays) % 12;
+  const stemIndex = ((0 + diffDays) % 10 + 10) % 10;
+  const branchIndex = ((10 + diffDays) % 12 + 12) % 12;
 
   const stem = getHeavenlyStemByIndex(stemIndex);
   const branch = getEarthlyBranchByIndex(branchIndex);
@@ -268,7 +282,7 @@ function calculateDayPillar(date: Date): Pillar {
  * 시주(時柱) 계산
  */
 function calculateHourPillar(date: Date, dayPillar: Pillar): Pillar {
-  const hours = date.getHours();
+  const hours = parseInt(formatInTimeZone(date, SEOUL_TZ, 'H'), 10);
 
   // 시지 계산 (2시간 단위)
   // 23-01시: 자시, 01-03시: 축시, ...
@@ -313,6 +327,8 @@ export function formatSaju(saju: SajuData): string {
 
 사주팔자는 출생 연월일시를 천간(天干)과 지지(地支)로 표현한 것으로,
 당신의 타고난 성격, 재능, 그리고 인생의 흐름을 나타냅니다.
+
+  출생지(경도 보정): ${saju.birthCity}
 
   연주(年柱): ${saju.year.stem}${saju.year.branch} (${saju.year.stemElement}/${saju.year.branchElement}) - 조상과 초년운(0-15세)
   월주(月柱): ${saju.month.stem}${saju.month.branch} (${saju.month.stemElement}/${saju.month.branchElement}) - 부모와 청년운(16-30세)

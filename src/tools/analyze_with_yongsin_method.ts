@@ -16,6 +16,7 @@ export interface AnalyzeWithYongSinParams {
   day: number;
   hour: number;
   minute: number;
+  birthCity?: string;
   calendar?: CalendarType;
   isLeapMonth?: boolean;
   gender: Gender;
@@ -75,7 +76,8 @@ export async function analyzeWithYongSinMethod(
       birthTime,
       params.calendar || 'solar',
       params.isLeapMonth || false,
-      params.gender
+      params.gender,
+      params.birthCity
     );
 
     // 용신 선택

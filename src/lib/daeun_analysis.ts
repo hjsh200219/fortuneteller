@@ -8,7 +8,8 @@ import type { SajuData, HeavenlyStem, EarthlyBranch, WuXing } from '../types/ind
 import { getHeavenlyStemByIndex } from '../data/heavenly_stems.js';
 import { getEarthlyBranchByIndex } from '../data/earthly_branches.js';
 import { HEAVENLY_STEMS, EARTHLY_BRANCHES } from './constants.js';
-import { getPreviousSolarTerm, getNextSolarTerm } from '../data/solar_terms_precise.js';
+import { getNextJieSolarTermByInstant, getPreviousJieSolarTermByInstant } from '../data/solar_terms.js';
+import { getManAgeForFortuneYear, getAdjustedBirthInstantForSaju } from '../utils/date.js';
 
 /**
  * 대운 주기 (10년)
@@ -112,7 +113,7 @@ function calculateDaeunStartAge(
 
   if (isYangMale) {
     // 양남음녀(陽男陰女): 생일 → 다음 절기
-    const nextTerm = getNextSolarTerm(birthDate);
+    const nextTerm = getNextJieSolarTermByInstant(birthDate);
     if (!nextTerm) {
       console.warn('다음 절기를 찾을 수 없어 기본값 3세를 사용합니다.');
       return 3;
@@ -120,7 +121,7 @@ function calculateDaeunStartAge(
     solarTermDate = new Date(nextTerm.datetime);
   } else {
     // 음남양녀(陰男陽女): 이전 절기 → 생일
-    const prevTerm = getPreviousSolarTerm(birthDate);
+    const prevTerm = getPreviousJieSolarTermByInstant(birthDate);
     if (!prevTerm) {
       console.warn('이전 절기를 찾을 수 없어 기본값 3세를 사용합니다.');
       return 3;
@@ -188,8 +189,7 @@ export function calculateDaeunList(
   const isYangMale = gender === 'male';
   const direction: '順行' | '逆行' = isYangMale ? '順行' : '逆行';
 
-  // 생년월일 Date 객체 생성
-  const birthDate = new Date(saju.birthDate);
+  const birthDate = getAdjustedBirthInstantForSaju(saju.birthDate, saju.birthTime, saju.birthCity);
 
   // 절기 데이터 기반 정밀 대운 시작 나이 계산
   const startAge = calculateDaeunStartAge(birthDate, isYangMale);
@@ -232,13 +232,13 @@ export function getDaeunByAge(
 
 /**
  * 특정 연도의 대운 찾기
+ * @param year 세운·운세가 적용되는 양력 연도 (해당 연도 말 기준 만 나이로 구간 매칭)
  */
 export function getDaeunByYear(
   saju: SajuData,
   year: number
 ): DaeunPeriod | null {
-  const birthYear = parseInt(saju.birthDate.split('-')[0] || '2000');
-  const age = year - birthYear;
+  const age = getManAgeForFortuneYear(saju.birthDate, year);
   return getDaeunByAge(saju, age);
 }
 

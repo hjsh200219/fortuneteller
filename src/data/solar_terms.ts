@@ -9,6 +9,7 @@
  * - 2101-2200: solar_terms_2101_2200.ts (Jean Meeus 알고리즘)
  */
 
+import { formatInTimeZone } from 'date-fns-tz';
 import type { SolarTerm } from '../types/index.js';
 import { SOLAR_TERMS_1900_2019, type SolarTermComplete } from './solar_terms_1900_2019.js';
 import { SOLAR_TERMS_COMPLETE } from './solar_terms_complete.js';
@@ -116,6 +117,109 @@ export function getSolarTermsForYear(year: number): SolarTermComplete[] {
   }
 
   return [];
+}
+
+const SEOUL_TZ = 'Asia/Seoul';
+
+/**
+ * 24절기 중 **절(節)** 12개 — 월건(月建)·대운 기산에 쓰임. **기(氣)**(우수·춘분 등)는 제외.
+ */
+export const SOLAR_TERMS_JIE: SolarTerm[] = [
+  '입춘',
+  '경칩',
+  '청명',
+  '입하',
+  '망종',
+  '소서',
+  '입추',
+  '백로',
+  '한로',
+  '입동',
+  '소설',
+  '대설',
+];
+
+const JIE_SET = new Set<SolarTerm>(SOLAR_TERMS_JIE);
+
+function isJieTerm(term: SolarTerm): boolean {
+  return JIE_SET.has(term);
+}
+
+/**
+ * 출생 시각 **이전**(포함)의 가장 최근 절기 — 1900-2200 통합 테이블
+ * (대운 역행 기산 등. `solar_terms_precise`는 2020-2030만 있어 과거 연도에서 실패함)
+ */
+export function getPreviousSolarTermByInstant(date: Date): SolarTermComplete | null {
+  const timestamp = date.getTime();
+  const seoulYear = parseInt(formatInTimeZone(date, SEOUL_TZ, 'yyyy'), 10);
+  const minY = Math.max(1900, seoulYear - 1);
+  const maxY = Math.min(2200, seoulYear + 1);
+  const allTerms: SolarTermComplete[] = [];
+  for (let y = minY; y <= maxY; y++) {
+    allTerms.push(...getSolarTermsForYear(y));
+  }
+  const before = allTerms.filter((t) => t.timestamp <= timestamp);
+  if (before.length === 0) {
+    return null;
+  }
+  return before.reduce((latest, cur) => (cur.timestamp > latest.timestamp ? cur : latest));
+}
+
+/**
+ * 출생 시각 **이후**의 가장 이른 절기 — 1900-2200 통합 테이블 (대운 순행 기산 등)
+ */
+export function getNextSolarTermByInstant(date: Date): SolarTermComplete | null {
+  const timestamp = date.getTime();
+  const seoulYear = parseInt(formatInTimeZone(date, SEOUL_TZ, 'yyyy'), 10);
+  const minY = Math.max(1900, seoulYear - 1);
+  const maxY = Math.min(2200, seoulYear + 1);
+  const allTerms: SolarTermComplete[] = [];
+  for (let y = minY; y <= maxY; y++) {
+    allTerms.push(...getSolarTermsForYear(y));
+  }
+  const after = allTerms.filter((t) => t.timestamp > timestamp);
+  if (after.length === 0) {
+    return null;
+  }
+  return after.reduce((earliest, cur) => (cur.timestamp < earliest.timestamp ? cur : earliest));
+}
+
+/**
+ * **절(節)만** — 출생 이전의 가장 최근 절(대운 역행 기산용. 대서·우수 등 기(氣)는 제외)
+ */
+export function getPreviousJieSolarTermByInstant(date: Date): SolarTermComplete | null {
+  const timestamp = date.getTime();
+  const seoulYear = parseInt(formatInTimeZone(date, SEOUL_TZ, 'yyyy'), 10);
+  const minY = Math.max(1900, seoulYear - 1);
+  const maxY = Math.min(2200, seoulYear + 1);
+  const allTerms: SolarTermComplete[] = [];
+  for (let y = minY; y <= maxY; y++) {
+    allTerms.push(...getSolarTermsForYear(y).filter((t) => isJieTerm(t.term)));
+  }
+  const before = allTerms.filter((t) => t.timestamp <= timestamp);
+  if (before.length === 0) {
+    return null;
+  }
+  return before.reduce((latest, cur) => (cur.timestamp > latest.timestamp ? cur : latest));
+}
+
+/**
+ * **절(節)만** — 출생 이후의 가장 이른 절(대운 순행 기산용)
+ */
+export function getNextJieSolarTermByInstant(date: Date): SolarTermComplete | null {
+  const timestamp = date.getTime();
+  const seoulYear = parseInt(formatInTimeZone(date, SEOUL_TZ, 'yyyy'), 10);
+  const minY = Math.max(1900, seoulYear - 1);
+  const maxY = Math.min(2200, seoulYear + 1);
+  const allTerms: SolarTermComplete[] = [];
+  for (let y = minY; y <= maxY; y++) {
+    allTerms.push(...getSolarTermsForYear(y).filter((t) => isJieTerm(t.term)));
+  }
+  const after = allTerms.filter((t) => t.timestamp > timestamp);
+  if (after.length === 0) {
+    return null;
+  }
+  return after.reduce((earliest, cur) => (cur.timestamp < earliest.timestamp ? cur : earliest));
 }
 
 /**

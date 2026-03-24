@@ -7,13 +7,15 @@ import type { SajuData, HeavenlyStem, EarthlyBranch, WuXing } from '../types/ind
 import { getHeavenlyStemByIndex } from '../data/heavenly_stems.js';
 import { getEarthlyBranchByIndex } from '../data/earthly_branches.js';
 import { analyzeElementInteraction } from '../data/wuxing.js';
+import { getManAgeForFortuneYear } from '../utils/date.js';
 
 /**
  * 세운(歲運) 한 해 정보
  */
 export interface SeUnYear {
   year: number; // 실제 연도 (예: 2025)
-  age: number; // 나이
+  /** 해당 연도 말(12/31) 기준 만 나이 (세운이 적용되는 해 기준) */
+  age: number;
   stem: HeavenlyStem;
   branch: EarthlyBranch;
   stemElement: WuXing;
@@ -84,8 +86,7 @@ export function analyzeSeUn(
   sajuData: SajuData,
   targetYear: number
 ): SeUnYear {
-  const birthYear = parseInt(sajuData.birthDate.split('-')[0]!);
-  const age = targetYear - birthYear + 1; // 한국 나이
+  const age = getManAgeForFortuneYear(sajuData.birthDate, targetYear);
 
   const yearGanJi = getYearGanJi(targetYear);
   const stemData = getHeavenlyStemByIndex(

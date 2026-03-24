@@ -230,6 +230,28 @@ export function getTrueSolarTimeOffsetByCity(cityName: string): number {
 }
 
 /**
+ * 출생지 시군구명을 테이블에 맞게 해석 (미입력·미등록 시 서울)
+ */
+export function resolveBirthCityForSaju(birthCity?: string): string {
+  const name = birthCity?.trim();
+  if (!name) {
+    return '서울';
+  }
+  if (KOREA_CITY_LONGITUDE[name] !== undefined) {
+    return name;
+  }
+  return '서울';
+}
+
+/**
+ * 사주용 경도 보정 (분): 한국 표준시 기준선(동경 135°) 대비 출생지 경도 차이
+ */
+export function getLongitudeOffsetMinutesForSaju(birthCity?: string): number {
+  const resolved = resolveBirthCityForSaju(birthCity);
+  return calculateTrueSolarTimeOffset(KOREA_CITY_LONGITUDE[resolved]!);
+}
+
+/**
  * 주요 도시별 진태양시 보정값 미리 계산
  */
 export const CITY_TRUE_SOLAR_TIME_OFFSET: Record<string, number> = {

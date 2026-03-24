@@ -22,6 +22,8 @@ export type AnalysisType =
 export interface AnalyzeSajuArgs {
   birthDate: string;
   birthTime: string;
+  /** 출생 시군구 (longitude_table 키: 서울, 부산, 제주 등). 생략 시 서울 */
+  birthCity?: string;
   calendar?: CalendarType;
   isLeapMonth?: boolean;
   gender: Gender;
@@ -41,6 +43,7 @@ export async function handleAnalyzeSaju(args: AnalyzeSajuArgs): Promise<string> 
   const {
     birthDate,
     birthTime,
+    birthCity,
     calendar = 'solar',
     isLeapMonth = false,
     gender,
@@ -51,7 +54,7 @@ export async function handleAnalyzeSaju(args: AnalyzeSajuArgs): Promise<string> 
   } = args;
 
   // 사주 계산
-  const sajuData = calculateSaju(birthDate, birthTime, calendar, isLeapMonth, gender);
+  const sajuData = calculateSaju(birthDate, birthTime, calendar, isLeapMonth, gender, birthCity);
 
   switch (analysisType) {
     case 'basic':

@@ -38,9 +38,17 @@ export const GenderSchema = z.enum(['male', 'female'], {
 /**
  * 사주 계산 입력 스키마
  */
+export const BirthCitySchema = z
+  .string()
+  .optional()
+  .describe(
+    '출생 시군구(한글 키: 서울·부산 등). 사주 도구 호출 전 사용자에게 확인 권장. 생략 시 서울 경도로 진태양시 보정'
+  );
+
 export const CalculateSajuSchema = z.object({
   birthDate: DateSchema.describe('생년월일 (YYYY-MM-DD)'),
   birthTime: TimeSchema.describe('출생 시간 (HH:mm)'),
+  birthCity: BirthCitySchema,
   calendar: CalendarTypeSchema.default('solar').describe('달력 타입 (solar: 양력, lunar: 음력)'),
   isLeapMonth: z.boolean().default(false).describe('음력 윤달 여부'),
   gender: GenderSchema.describe('성별 (male: 남자, female: 여자)')
@@ -52,6 +60,7 @@ export const CalculateSajuSchema = z.object({
 export const AnalyzeFortuneSchema = z.object({
   birthDate: DateSchema.describe('생년월일 (YYYY-MM-DD)'),
   birthTime: TimeSchema.describe('출생 시간 (HH:mm)'),
+  birthCity: BirthCitySchema,
   calendar: CalendarTypeSchema.default('solar').describe('달력 타입'),
   isLeapMonth: z.boolean().default(false).describe('음력 윤달 여부'),
   gender: GenderSchema.describe('성별')
@@ -64,6 +73,7 @@ export const CheckCompatibilitySchema = z.object({
   person1: z.object({
     birthDate: DateSchema.describe('생년월일 (YYYY-MM-DD)'),
     birthTime: TimeSchema.describe('출생 시간 (HH:mm)'),
+    birthCity: BirthCitySchema,
     calendar: CalendarTypeSchema.default('solar').describe('달력 타입'),
     isLeapMonth: z.boolean().default(false).describe('음력 윤달 여부'),
     gender: GenderSchema.describe('성별')
@@ -71,6 +81,7 @@ export const CheckCompatibilitySchema = z.object({
   person2: z.object({
     birthDate: DateSchema.describe('생년월일 (YYYY-MM-DD)'),
     birthTime: TimeSchema.describe('출생 시간 (HH:mm)'),
+    birthCity: BirthCitySchema,
     calendar: CalendarTypeSchema.default('solar').describe('달력 타입'),
     isLeapMonth: z.boolean().default(false).describe('음력 윤달 여부'),
     gender: GenderSchema.describe('성별')
@@ -93,6 +104,7 @@ export const ConvertCalendarSchema = z.object({
 export const GetDailyFortuneSchema = z.object({
   birthDate: DateSchema.describe('생년월일 (YYYY-MM-DD)'),
   birthTime: TimeSchema.describe('출생 시간 (HH:mm)'),
+  birthCity: BirthCitySchema,
   targetDate: DateSchema.describe('운세를 볼 날짜 (YYYY-MM-DD)'),
   calendar: CalendarTypeSchema.default('solar').describe('달력 타입'),
   isLeapMonth: z.boolean().default(false).describe('음력 윤달 여부'),
@@ -105,9 +117,13 @@ export const GetDailyFortuneSchema = z.object({
 export const GetDaeUnSchema = z.object({
   birthDate: DateSchema.describe('생년월일 (YYYY-MM-DD)'),
   birthTime: TimeSchema.describe('출생 시간 (HH:mm)'),
+  birthCity: BirthCitySchema,
   calendar: CalendarTypeSchema.default('solar').describe('달력 타입'),
   isLeapMonth: z.boolean().default(false).describe('음력 윤달 여부'),
-  gender: GenderSchema.describe('성별')
+  gender: GenderSchema.describe('성별'),
+  age: z.number().int().min(0).max(150).optional().describe('만 나이(선택). targetYear와 함께 주면 targetYear 우선'),
+  targetYear: z.number().int().min(1900).max(2200).optional().describe('운이 들어오는 양력 연도(선택). 해당 연도 말 기준 만 나이로 대운 구간 조회'),
+  limit: z.number().int().min(1).max(12).default(10).describe('표시할 대운 개수 상한')
 });
 
 /**
@@ -116,6 +132,7 @@ export const GetDaeUnSchema = z.object({
 export const AnalyzeYongSinSchema = z.object({
   birthDate: DateSchema.describe('생년월일 (YYYY-MM-DD)'),
   birthTime: TimeSchema.describe('출생 시간 (HH:mm)'),
+  birthCity: BirthCitySchema,
   calendar: CalendarTypeSchema.default('solar').describe('달력 타입'),
   isLeapMonth: z.boolean().default(false).describe('음력 윤달 여부'),
   gender: GenderSchema.describe('성별')
@@ -127,6 +144,7 @@ export const AnalyzeYongSinSchema = z.object({
 export const GetYearlyFortuneSchema = z.object({
   birthDate: DateSchema.describe('생년월일 (YYYY-MM-DD)'),
   birthTime: TimeSchema.describe('출생 시간 (HH:mm)'),
+  birthCity: BirthCitySchema,
   targetYear: z.number().int().min(1900).max(2100).describe('운세를 볼 연도'),
   calendar: CalendarTypeSchema.default('solar').describe('달력 타입'),
   isLeapMonth: z.boolean().default(false).describe('음력 윤달 여부'),
@@ -139,6 +157,7 @@ export const GetYearlyFortuneSchema = z.object({
 export const GetMonthlyFortuneSchema = z.object({
   birthDate: DateSchema.describe('생년월일 (YYYY-MM-DD)'),
   birthTime: TimeSchema.describe('출생 시간 (HH:mm)'),
+  birthCity: BirthCitySchema,
   targetYear: z.number().int().min(1900).max(2100).describe('운세를 볼 연도'),
   targetMonth: z.number().int().min(1).max(12).describe('운세를 볼 월 (1-12)'),
   calendar: CalendarTypeSchema.default('solar').describe('달력 타입'),
@@ -152,6 +171,7 @@ export const GetMonthlyFortuneSchema = z.object({
 export const GetHourlyFortuneSchema = z.object({
   birthDate: DateSchema.describe('생년월일 (YYYY-MM-DD)'),
   birthTime: TimeSchema.describe('출생 시간 (HH:mm)'),
+  birthCity: BirthCitySchema,
   targetDate: DateSchema.describe('운세를 볼 날짜 (YYYY-MM-DD)'),
   targetHour: z.number().int().min(0).max(23).describe('운세를 볼 시간 (0-23)'),
   calendar: CalendarTypeSchema.default('solar').describe('달력 타입'),
@@ -178,6 +198,7 @@ export const SetInterpretationSettingsSchema = z.object({
 export const CompareInterpretationSchoolsSchema = z.object({
   birthDate: DateSchema.describe('생년월일 (YYYY-MM-DD)'),
   birthTime: TimeSchema.describe('출생 시간 (HH:mm)'),
+  birthCity: BirthCitySchema,
   calendar: CalendarTypeSchema.default('solar').describe('달력 타입'),
   isLeapMonth: z.boolean().default(false).describe('음력 윤달 여부'),
   gender: GenderSchema.describe('성별')
@@ -189,6 +210,7 @@ export const CompareInterpretationSchoolsSchema = z.object({
 export const AnalyzeWithYongsinMethodSchema = z.object({
   birthDate: DateSchema.describe('생년월일 (YYYY-MM-DD)'),
   birthTime: TimeSchema.describe('출생 시간 (HH:mm)'),
+  birthCity: BirthCitySchema,
   method: z.enum(['strength', 'seasonal', 'mediation', 'disease']).describe('용신 방법론 (strength: 강약용신, seasonal: 조후용신, mediation: 통관용신, disease: 병약용신)'),
   calendar: CalendarTypeSchema.default('solar').describe('달력 타입'),
   isLeapMonth: z.boolean().default(false).describe('음력 윤달 여부'),
