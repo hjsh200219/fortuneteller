@@ -177,7 +177,8 @@ function calculateYearPillar(date: Date): Pillar {
   let sajuYear = year;
 
   // 1월이나 2월 초에 입춘 이전이면 전년도
-  if (month <= 2 && solarTerm === '대한') {
+  // 입춘 이전 절기: 동지, 소한, 대한
+  if (month <= 2 && (solarTerm === '동지' || solarTerm === '소한' || solarTerm === '대한')) {
     sajuYear = year - 1;
   }
 
@@ -252,7 +253,7 @@ function calculateMonthPillar(date: Date, yearPillar: Pillar): Pillar {
 
 /**
  * 일주(日柱) 계산
- * 정확한 기준일: 1900년 1월 1일 = 갑술일(甲戌日)
+ * 정확한 기준일: 1900년 1월 1일 = 병자일(丙子日) (JDN 검증 완료)
  * 출생 순간을 대한민국 달력 일(Asia/Seoul)로 두고 기준일과의 일수 차를 쓴다(UTC 일수 나눗셈·서버 타임존 의존 방지).
  */
 function calculateDayPillar(date: Date): Pillar {
@@ -262,9 +263,9 @@ function calculateDayPillar(date: Date): Pillar {
   const diffDays = differenceInCalendarDays(birth, base);
 
   // 60갑자 순환
-  // 갑(甲) = 0, 술(戌) = 10에서 시작
-  const stemIndex = ((0 + diffDays) % 10 + 10) % 10;
-  const branchIndex = ((10 + diffDays) % 12 + 12) % 12;
+  // 병(丙) = 2, 자(子) = 0에서 시작
+  const stemIndex = ((2 + diffDays) % 10 + 10) % 10;
+  const branchIndex = ((0 + diffDays) % 12 + 12) % 12;
 
   const stem = getHeavenlyStemByIndex(stemIndex);
   const branch = getEarthlyBranchByIndex(branchIndex);

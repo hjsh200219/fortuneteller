@@ -7,7 +7,7 @@
 import type { HeavenlyStem, EarthlyBranch } from '../types/index.js';
 import { getHeavenlyStemByIndex } from '../data/heavenly_stems.js';
 import { getEarthlyBranchByIndex } from '../data/earthly_branches.js';
-import { BASE_YEAR, BASE_DATE, BASE_DAY_STEM_INDEX, BASE_DAY_BRANCH_INDEX } from './constants.js';
+import { BASE_YEAR, BASE_DATE_UTC, BASE_DAY_STEM_INDEX, BASE_DAY_BRANCH_INDEX } from './constants.js';
 
 /**
  * 년도에서 천간 구하기
@@ -40,10 +40,12 @@ export function getEarthlyBranchFromYear(year: number): EarthlyBranch {
  * @returns 일간과 일지
  */
 export function getDayPillar(date: Date): { stem: HeavenlyStem; branch: EarthlyBranch } {
-  const diffDays = Math.floor((date.getTime() - BASE_DATE.getTime()) / (1000 * 60 * 60 * 24));
+  // UTC 기반으로 일수 차이 계산하여 타임존 영향 제거
+  const targetUTC = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+  const diffDays = Math.round((targetUTC - BASE_DATE_UTC) / (1000 * 60 * 60 * 24));
 
-  const stemIndex = (BASE_DAY_STEM_INDEX + diffDays) % 10;
-  const branchIndex = (BASE_DAY_BRANCH_INDEX + diffDays) % 12;
+  const stemIndex = ((BASE_DAY_STEM_INDEX + diffDays) % 10 + 10) % 10;
+  const branchIndex = ((BASE_DAY_BRANCH_INDEX + diffDays) % 12 + 12) % 12;
 
   const stem = getHeavenlyStemByIndex(stemIndex);
   const branch = getEarthlyBranchByIndex(branchIndex);

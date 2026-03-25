@@ -6,7 +6,7 @@
  */
 
 import type { CalendarType, CalendarConversion } from '../types/index.js';
-import { getCurrentSolarTerm } from '../data/solar_terms.js';
+import { getCurrentSolarTermPrecise } from '../data/solar_terms.js';
 import { solarToLunarLocal, lunarToSolarLocal } from '../data/lunar_table.js';
 
 /**
@@ -15,9 +15,12 @@ import { solarToLunarLocal, lunarToSolarLocal } from '../data/lunar_table.js';
 export function convertCalendar(
   date: string,
   fromCalendar: CalendarType,
-  toCalendar: CalendarType
+  toCalendar: CalendarType,
+  isLeapMonth: boolean = false
 ): CalendarConversion {
-  const inputDate = new Date(date);
+  // 타임존 일관성: 로컬 타임존으로 파싱
+  const parts = date.split('-').map(Number) as [number, number, number];
+  const inputDate = new Date(parts[0], parts[1] - 1, parts[2]);
 
   if (fromCalendar === toCalendar) {
     return {
@@ -25,7 +28,7 @@ export function convertCalendar(
       originalCalendar: fromCalendar,
       convertedDate: date,
       convertedCalendar: toCalendar,
-      solarTerm: getCurrentSolarTerm(inputDate),
+      solarTerm: getCurrentSolarTermPrecise(inputDate),
     };
   }
 
@@ -51,7 +54,7 @@ export function convertCalendar(
       convertedDate: dateString,
       convertedCalendar: 'lunar',
       isLeapMonth: result.isLeapMonth,
-      solarTerm: getCurrentSolarTerm(inputDate),
+      solarTerm: getCurrentSolarTermPrecise(inputDate),
     };
   }
 
@@ -61,7 +64,7 @@ export function convertCalendar(
       inputDate.getFullYear(),
       inputDate.getMonth() + 1,
       inputDate.getDate(),
-      false // 기본적으로 평달로 가정
+      isLeapMonth
     );
 
     if (!result) {
@@ -78,7 +81,7 @@ export function convertCalendar(
       originalCalendar: 'lunar',
       convertedDate: dateString,
       convertedCalendar: 'solar',
-      solarTerm: getCurrentSolarTerm(solarDate),
+      solarTerm: getCurrentSolarTermPrecise(solarDate),
     };
   }
 

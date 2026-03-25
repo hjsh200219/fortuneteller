@@ -127,7 +127,9 @@ export const BASE_YEAR = 4;
 
 /**
  * 기준 날짜 (일주 계산용 - 1900년 1월 1일 = 병자일)
+ * UTC 기반으로 타임존 영향 제거
  */
+export const BASE_DATE_UTC = Date.UTC(1900, 0, 1);
 export const BASE_DATE = new Date(1900, 0, 1);
 export const BASE_DAY_STEM_INDEX = 2; // 병(丙)
 export const BASE_DAY_BRANCH_INDEX = 0; // 자(子)

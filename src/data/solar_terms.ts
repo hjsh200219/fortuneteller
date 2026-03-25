@@ -93,30 +93,45 @@ export const SOLAR_TERM_APPROXIMATE_DATES: Record<SolarTerm, [number, number]> =
 };
 
 /**
- * 연도별 절기 데이터 조회 (자동 분기)
+ * datetime 문자열에서 올바른 UTC timestamp를 계산
+ * 원본 데이터의 timestamp가 KST offset(+09:00)을 무시하고 저장된 문제 보정
+ */
+function correctTimestamp(term: SolarTermComplete): SolarTermComplete {
+  const corrected = new Date(term.datetime).getTime();
+  if (corrected !== term.timestamp) {
+    return { ...term, timestamp: corrected };
+  }
+  return term;
+}
+
+// 보정된 데이터 캐시
+const correctedCache = new Map<number, SolarTermComplete[]>();
+
+/**
+ * 연도별 절기 데이터 조회 (자동 분기, timestamp 보정 적용)
  */
 export function getSolarTermsForYear(year: number): SolarTermComplete[] {
+  const cached = correctedCache.get(year);
+  if (cached) return cached;
+
+  let raw: SolarTermComplete[];
+
   // 1900-2019
   if (year >= 1900 && year <= 2019) {
-    return SOLAR_TERMS_1900_2019.filter((data) => data.year === year);
+    raw = SOLAR_TERMS_1900_2019.filter((data) => data.year === year);
+  } else if (year >= 2020 && year <= 2030) {
+    raw = SOLAR_TERMS_COMPLETE.filter((data) => data.year === year);
+  } else if (year >= 2031 && year <= 2100) {
+    raw = SOLAR_TERMS_2031_2100.filter((data) => data.year === year);
+  } else if (year >= 2101 && year <= 2200) {
+    raw = SOLAR_TERMS_2101_2200.filter((data) => data.year === year);
+  } else {
+    return [];
   }
 
-  // 2020-2030
-  if (year >= 2020 && year <= 2030) {
-    return SOLAR_TERMS_COMPLETE.filter((data) => data.year === year);
-  }
-
-  // 2031-2100
-  if (year >= 2031 && year <= 2100) {
-    return SOLAR_TERMS_2031_2100.filter((data) => data.year === year);
-  }
-
-  // 2101-2200
-  if (year >= 2101 && year <= 2200) {
-    return SOLAR_TERMS_2101_2200.filter((data) => data.year === year);
-  }
-
-  return [];
+  const corrected = raw.map(correctTimestamp);
+  correctedCache.set(year, corrected);
+  return corrected;
 }
 
 const SEOUL_TZ = 'Asia/Seoul';
@@ -287,35 +302,59 @@ export function getCurrentSolarTermPrecise(date: Date): SolarTerm {
 
 /**
  * 특정 날짜가 어느 절기와 절기 사이인지 판단 (근사)
+ * 주의: 이 함수는 ±1일 오차가 있으므로 정밀 계산에는 getCurrentSolarTermPrecise 사용
  */
 export function getCurrentSolarTerm(date: Date): SolarTerm {
   const month = date.getMonth() + 1;
   const day = date.getDate();
 
-  // 간단한 방식: 날짜로 절기 추정
-  for (let i = 0; i < SOLAR_TERMS.length; i++) {
-    const term = SOLAR_TERMS[i]!;
-    const [termMonth, termDay] = SOLAR_TERM_APPROXIMATE_DATES[term.name]!;
+  // 날짜를 월*100+일 형태의 숫자로 변환하여 비교
+  const dateNum = month * 100 + day;
 
-    const nextIndex = (i + 1) % SOLAR_TERMS.length;
-    const nextTerm = SOLAR_TERMS[nextIndex]!;
-    const [nextMonth, nextDay] = SOLAR_TERM_APPROXIMATE_DATES[nextTerm.name]!;
+  // 각 절기의 대략적 시작일을 숫자로 변환
+  const termNums: Array<{ name: SolarTerm; num: number }> = SOLAR_TERMS.map((t) => {
+    const [m, d] = SOLAR_TERM_APPROXIMATE_DATES[t.name]!;
+    return { name: t.name, num: m * 100 + d };
+  });
 
-    // 현재 절기와 다음 절기 사이인지 확인
-    if (month === termMonth && day >= termDay) {
-      if (nextMonth === termMonth) {
-        if (day < nextDay) {
-          return term.name;
-        }
-      } else {
-        return term.name;
-      }
-    } else if (month === nextMonth && day < nextDay && termMonth < nextMonth) {
-      return term.name;
+  // 12월-1월 순환 처리: 동지(12/22) 이후 ~ 소한(1/6) 이전은 동지
+  // 대한(1/20) 이후 ~ 입춘(2/4) 이전은 대한
+  // 소한(1/6) 이후 ~ 대한(1/20) 이전은 소한
+
+  // 연말 (12월 동지 이후)
+  const dongji = SOLAR_TERM_APPROXIMATE_DATES['동지']!;
+  if (month === 12 && day >= dongji[1]) {
+    return '동지';
+  }
+
+  // 연초 (1월)
+  const sohan = SOLAR_TERM_APPROXIMATE_DATES['소한']!;
+  const daehan = SOLAR_TERM_APPROXIMATE_DATES['대한']!;
+  const ipchun = SOLAR_TERM_APPROXIMATE_DATES['입춘']!;
+  if (month === 1) {
+    if (day < sohan[1]) return '동지';
+    if (day < daehan[1]) return '소한';
+    return '대한';
+  }
+
+  // 2월 입춘 이전
+  if (month === 2 && day < ipchun[1]) {
+    return '대한';
+  }
+
+  // 나머지: 입춘(2월)부터 대설(12월)까지 순차 비교
+  for (let i = 0; i < termNums.length; i++) {
+    const current = termNums[i]!;
+    const next = termNums[(i + 1) % termNums.length]!;
+
+    // 소한/대한은 위에서 이미 처리
+    if (current.name === '소한' || current.name === '대한') continue;
+
+    if (dateNum >= current.num && (next.num > current.num ? dateNum < next.num : true)) {
+      return current.name;
     }
   }
 
-  // 기본값: 입춘
   return '입춘';
 }
 
@@ -327,5 +366,59 @@ export function getSolarTermMonthIndex(term: SolarTerm): number {
   const termIndex = SOLAR_TERMS.findIndex((t) => t.name === term);
   // 입춘(0)부터 시작, 2개 절기당 1개월
   return Math.floor(termIndex / 2);
+}
+
+/**
+ * 특정 날짜의 직전 절기 조회 (1900-2200 전체 범위)
+ * 대운 계산용 - solar_terms_precise.ts 대체
+ */
+export function getPreviousSolarTerm(date: Date): SolarTermComplete | null {
+  const year = date.getFullYear();
+  const timestamp = date.getTime();
+
+  // 현재 연도 + 전년도 절기 데이터 조회
+  const yearTerms = getSolarTermsForYear(year);
+  const prevYearTerms = getSolarTermsForYear(year - 1);
+
+  const allTerms = [...prevYearTerms, ...yearTerms];
+
+  // 날짜 이전의 절기들 중 가장 최근 것 찾기
+  let latest: SolarTermComplete | null = null;
+  for (const term of allTerms) {
+    if (term.timestamp <= timestamp) {
+      if (!latest || term.timestamp > latest.timestamp) {
+        latest = term;
+      }
+    }
+  }
+
+  return latest;
+}
+
+/**
+ * 특정 날짜의 다음 절기 조회 (1900-2200 전체 범위)
+ * 대운 계산용 - solar_terms_precise.ts 대체
+ */
+export function getNextSolarTerm(date: Date): SolarTermComplete | null {
+  const year = date.getFullYear();
+  const timestamp = date.getTime();
+
+  // 현재 연도 + 다음 연도 절기 데이터 조회
+  const yearTerms = getSolarTermsForYear(year);
+  const nextYearTerms = getSolarTermsForYear(year + 1);
+
+  const allTerms = [...yearTerms, ...nextYearTerms];
+
+  // 날짜 이후의 절기들 중 가장 가까운 것 찾기
+  let earliest: SolarTermComplete | null = null;
+  for (const term of allTerms) {
+    if (term.timestamp > timestamp) {
+      if (!earliest || term.timestamp < earliest.timestamp) {
+        earliest = term;
+      }
+    }
+  }
+
+  return earliest;
 }
 

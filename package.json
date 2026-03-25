@@ -17,6 +17,7 @@
     "build": "tsc",
     "dev": "tsx src/index.ts",
     "start": "node dist/index.js",
+    "start:http": "node dist/server-http.js",
     "watch": "tsx watch src/index.ts",
     "test": "jest",
     "test:watch": "jest --watch",
