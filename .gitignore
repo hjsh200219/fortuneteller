@@ -1,6 +1,5 @@
 # 의존성
 node_modules/
-package-lock.json
 yarn.lock
 pnpm-lock.yaml
 
@@ -53,4 +52,4 @@ coverage/
 
 # MCP 관련
 .mcp/
-
+.omc/
