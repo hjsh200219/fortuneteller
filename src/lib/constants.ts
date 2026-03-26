@@ -126,13 +126,15 @@ export const DAY_RATINGS = {
 export const BASE_YEAR = 4;
 
 /**
- * 기준 날짜 (일주 계산용 - 1900년 1월 1일 = 병자일)
+ * 기준 날짜 (일주 계산용 - 1900년 1월 1일 = 갑술일)
+ * 만세력 원전 대조 결과: 1900-01-01 = 甲戌日 (갑술일)
+ * (기존 병자(丙子)는 실제 1900-01-03에 해당하므로 2일 오프셋 오류였음)
  * UTC 기반으로 타임존 영향 제거
  */
 export const BASE_DATE_UTC = Date.UTC(1900, 0, 1);
 export const BASE_DATE = new Date(1900, 0, 1);
-export const BASE_DAY_STEM_INDEX = 2; // 병(丙)
-export const BASE_DAY_BRANCH_INDEX = 0; // 자(子)
+export const BASE_DAY_STEM_INDEX = 0; // 갑(甲)
+export const BASE_DAY_BRANCH_INDEX = 10; // 술(戌)
 
 /**
  * 점수 범위 상수

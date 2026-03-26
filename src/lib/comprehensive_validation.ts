@@ -56,13 +56,13 @@ export interface SajuTestCase {
 export const COMPREHENSIVE_TEST_CASES: SajuTestCase[] = [
   // 일주 검증 케이스 (기존 검증 데이터 활용)
   {
-    description: '1900년 1월 1일 (병자일 기준일)',
+    description: '1900년 1월 1일 (갑술일 기준일)',
     birthDate: '1900-01-01',
     birthTime: '12:00',
     calendar: 'solar',
     isLeapMonth: false,
     gender: 'male',
-    expected: { dayStem: '병', dayBranch: '자' },
+    expected: { dayStem: '갑', dayBranch: '술' },
   },
   {
     description: '2000년 1월 1일 (밀레니엄)',
@@ -71,7 +71,7 @@ export const COMPREHENSIVE_TEST_CASES: SajuTestCase[] = [
     calendar: 'solar',
     isLeapMonth: false,
     gender: 'male',
-    expected: { dayStem: '경', dayBranch: '신' },
+    expected: { dayStem: '무', dayBranch: '오' },
   },
   {
     description: '2024년 1월 1일',
@@ -80,7 +80,7 @@ export const COMPREHENSIVE_TEST_CASES: SajuTestCase[] = [
     calendar: 'solar',
     isLeapMonth: false,
     gender: 'female',
-    expected: { dayStem: '병', dayBranch: '인' },
+    expected: { dayStem: '갑', dayBranch: '자' },
   },
 
   // 시주 검증 케이스 (진태양시 보정 포함)
@@ -92,7 +92,7 @@ export const COMPREHENSIVE_TEST_CASES: SajuTestCase[] = [
     isLeapMonth: false,
     gender: 'male',
     location: '서울',
-    expected: { dayStem: '신', dayBranch: '해', hourBranch: '자' },
+    expected: { dayStem: '기', dayBranch: '유', hourBranch: '자' },
   },
   {
     description: '부산 오시 출생 (11:00-13:00)',
@@ -102,7 +102,7 @@ export const COMPREHENSIVE_TEST_CASES: SajuTestCase[] = [
     isLeapMonth: false,
     gender: 'female',
     location: '부산',
-    expected: { dayStem: '임', dayBranch: '자', hourBranch: '오' },
+    expected: { dayStem: '경', dayBranch: '술', hourBranch: '오' },
   },
 
   // 대운 시작 나이 검증 (절기 기반)

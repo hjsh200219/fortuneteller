@@ -8,8 +8,9 @@ function calculateDayPillar(dateStr: string): { stem: string; branch: string } {
   const baseDate = new Date('1900-01-01');
   const diffDays = Math.floor((date.getTime() - baseDate.getTime()) / (1000 * 60 * 60 * 24));
 
-  const stemIndex = (2 + diffDays) % 10;
-  const branchIndex = (0 + diffDays) % 12;
+  // 1900-01-01 = 갑술일(甲戌日): stem=0(갑), branch=10(술)
+  const stemIndex = ((0 + diffDays) % 10 + 10) % 10;
+  const branchIndex = ((10 + diffDays) % 12 + 12) % 12;
 
   const stems = ['갑', '을', '병', '정', '무', '기', '경', '신', '임', '계'];
   const branches = ['자', '축', '인', '묘', '진', '사', '오', '미', '신', '유', '술', '해'];
@@ -20,7 +21,7 @@ function calculateDayPillar(dateStr: string): { stem: string; branch: string } {
 // 검증용 주요 날짜들
 const testDates = [
   // 기준일 검증
-  { date: '1900-01-01', desc: '1900년 시작일 (병자일 기준)' },
+  { date: '1900-01-01', desc: '1900년 시작일 (갑술일 기준)' },
 
   // 2000년대
   { date: '2000-01-01', desc: '밀레니엄' },

@@ -253,7 +253,7 @@ function calculateMonthPillar(date: Date, yearPillar: Pillar): Pillar {
 
 /**
  * 일주(日柱) 계산
- * 정확한 기준일: 1900년 1월 1일 = 병자일(丙子日) (JDN 검증 완료)
+ * 정확한 기준일: 1900년 1월 1일 = 갑술일(甲戌日) (만세력 원전 대조 완료)
  * 출생 순간을 대한민국 달력 일(Asia/Seoul)로 두고 기준일과의 일수 차를 쓴다(UTC 일수 나눗셈·서버 타임존 의존 방지).
  */
 function calculateDayPillar(date: Date): Pillar {
@@ -263,9 +263,9 @@ function calculateDayPillar(date: Date): Pillar {
   const diffDays = differenceInCalendarDays(birth, base);
 
   // 60갑자 순환
-  // 병(丙) = 2, 자(子) = 0에서 시작
-  const stemIndex = ((2 + diffDays) % 10 + 10) % 10;
-  const branchIndex = ((0 + diffDays) % 12 + 12) % 12;
+  // 갑(甲) = 0, 술(戌) = 10에서 시작
+  const stemIndex = ((0 + diffDays) % 10 + 10) % 10;
+  const branchIndex = ((10 + diffDays) % 12 + 12) % 12;
 
   const stem = getHeavenlyStemByIndex(stemIndex);
   const branch = getEarthlyBranchByIndex(branchIndex);
