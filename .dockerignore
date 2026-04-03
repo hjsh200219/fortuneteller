@@ -14,7 +14,9 @@ coverage/
 
 # 개발 도구 (tsconfig.json은 빌드에 필요하므로 유지)
 .eslintrc.*
+eslint.config.js
 .prettierrc
+.prettierrc.json
 
 # Git
 .git/
@@ -55,6 +57,4 @@ Thumbs.db
 CLAUDE.md
 
 # 배포 관련
-PUBLISHING.md
-DEPLOYMENT_CHECKLIST.md
 install.sh

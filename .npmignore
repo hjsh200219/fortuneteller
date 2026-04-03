@@ -12,7 +12,9 @@ coverage/
 
 # 개발 도구
 .eslintrc.*
+eslint.config.js
 .prettierrc
+.prettierrc.json
 tsconfig.json
 tsconfig.*.json
 
