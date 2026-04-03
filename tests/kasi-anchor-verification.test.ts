@@ -140,8 +140,8 @@ describe('KASI 앵커 절기 시각 검증', () => {
 });
 
 describe('대운 계산용 절기 함수 검증', () => {
-  // solar_terms_precise.ts의 getPreviousSolarTerm/getNextSolarTerm이
-  // 폐기 후에도 동일 기능을 solar_terms.ts에서 제공해야 함
+  // getPreviousSolarTerm/getNextSolarTerm이
+  // solar_terms.ts에서 1900-2200 전 범위를 커버해야 함
 
   test('getPreviousSolarTerm이 1900-2200 전 범위에서 null 없이 동작해야 함', () => {
     const { getPreviousSolarTerm } = require('../src/data/solar_terms.js');

@@ -55,7 +55,6 @@ interface WuXingData {
 // 24절기 데이터 (1900-2200, 4개 파일로 분할)
 // solar_terms_1900_2019.ts, solar_terms.ts (2020-2030)
 // solar_terms_2031_2100.ts, solar_terms_2101_2200.ts
-// + solar_terms_precise.ts (분 단위 정밀도)
 // + solar_terms_complete.ts (통합 조회)
 type SolarTermEntry = {
   year: number;
@@ -140,7 +139,7 @@ Record<EarthlyBranch, {
 
 | 데이터 | 범위 | 파일 수 |
 |--------|------|---------|
-| 절기 | 1900-2200 | 6 |
+| 절기 | 1900-2200 | 5 |
 | 음력 | 1900-2200 | 5 |
 | 경도 | 162개 시군구 | 1 |
 | 직업 | 500+ | 1 |

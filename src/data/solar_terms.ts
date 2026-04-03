@@ -162,7 +162,6 @@ function isJieTerm(term: SolarTerm): boolean {
 
 /**
  * 출생 시각 **이전**(포함)의 가장 최근 절기 — 1900-2200 통합 테이블
- * (대운 역행 기산 등. `solar_terms_precise`는 2020-2030만 있어 과거 연도에서 실패함)
  */
 export function getPreviousSolarTermByInstant(date: Date): SolarTermComplete | null {
   const timestamp = date.getTime();
@@ -370,7 +369,7 @@ export function getSolarTermMonthIndex(term: SolarTerm): number {
 
 /**
  * 특정 날짜의 직전 절기 조회 (1900-2200 전체 범위)
- * 대운 계산용 - solar_terms_precise.ts 대체
+ * 대운 계산용
  */
 export function getPreviousSolarTerm(date: Date): SolarTermComplete | null {
   const year = date.getFullYear();
@@ -397,7 +396,7 @@ export function getPreviousSolarTerm(date: Date): SolarTermComplete | null {
 
 /**
  * 특정 날짜의 다음 절기 조회 (1900-2200 전체 범위)
- * 대운 계산용 - solar_terms_precise.ts 대체
+ * 대운 계산용
  */
 export function getNextSolarTerm(date: Date): SolarTermComplete | null {
   const year = date.getFullYear();
