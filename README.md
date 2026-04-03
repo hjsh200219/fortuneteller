@@ -494,12 +494,10 @@ Easier installation and management through Smithery marketplace.
 
 ### 📖 Documentation
 
-- 📘 [Quick Start Guide](QUICKSTART.md) - Get started in 5 minutes
-- 📗 [Setup Guide](SETUP.md) - Detailed installation and configuration
-- 📕 [Publishing Guide](PUBLISHING.md) - npm package publishing
 - 📙 [Developer Guide](CLAUDE.md) - Project structure and development
-- 📓 [PRD](docs/PRD_fortuneteller_improvements.md) - Product roadmap
-- 📚 [API Documentation](docs/api/index.html) - TypeDoc generated API docs
+- 📘 [Architecture](ARCHITECTURE.md) - System architecture overview
+- 📗 [Design Docs](docs/design-docs/index.md) - Design decisions and principles
+- 📕 [Quality Score](docs/QUALITY_SCORE.md) - Quality metrics tracking
 
 ### 🤝 Contributing
 

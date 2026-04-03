@@ -93,7 +93,7 @@ fortuneteller/
 │   │   ├── daeun_reference_table.ts # 대운 참조
 │   │   ├── jijanggan_strength_table.ts # 지장간 세력
 │   │   ├── manselyeok_table.ts # 만세력
-│   │   └── (연도별 분할 테이블 8개)
+│   │   └── (연도별 분할 테이블 9개)
 │   │
 │   ├── types/                # [L5] 타입 정의 레이어
 │   │   ├── index.ts          #   SajuData, Pillar, 리터럴 타입

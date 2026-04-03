@@ -58,3 +58,6 @@ Thumbs.db
 # Claude 설정
 .claude/
 CLAUDE.md
+
+# 하네스 GC 작업 디렉토리
+_workspace/

@@ -56,5 +56,8 @@ Thumbs.db
 .claude/
 CLAUDE.md
 
+# 하네스 GC 작업 디렉토리
+_workspace/
+
 # 배포 관련
 install.sh
