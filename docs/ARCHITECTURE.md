@@ -19,16 +19,14 @@ fortuneteller/
 │   ├── schemas/              # [L1.5] Zod 스키마 (입력 검증)
 │   │   └── index.ts
 │   │
-│   ├── tools/                # [L2] 도구 핸들러 레이어
-│   │   ├── analyze_saju.ts   #   사주 분석 통합
+│   ├── tools/                # [L2] 도구 핸들러 레이어 (7개)
+│   │   ├── analyze_saju.ts   #   사주 분석 통합 (basic/fortune/yongsin/school_compare/yongsin_method)
 │   │   ├── check_compatibility.ts
 │   │   ├── convert_calendar.ts
 │   │   ├── get_daily_fortune.ts
 │   │   ├── get_dae_un.ts
 │   │   ├── get_fortune_by_period.ts
 │   │   ├── manage_settings.ts
-│   │   ├── analyze_with_yongsin_method.ts
-│   │   ├── compare_interpretation_schools.ts
 │   │   └── index.ts          #   통합 export
 │   │
 │   ├── lib/                  # [L3] 비즈니스 로직 레이어

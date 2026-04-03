@@ -13,7 +13,7 @@ const toolSchemaFactories: Record<string, () => Tool> = {
   analyze_saju: () => ({
     name: 'analyze_saju',
     description:
-      '사주 분석 통합 (basic/fortune/yongsin/school_compare/yongsin_method). 호출 전 사용자에게 이름(한글)·한자(선택)·양력/음력·생년월일시·윤달(음력 시)·성별·태어난 시군구를 확인할 것. 대화형 상세 해석 문장은 저장소 CLAUDE.md 「명리 해석 프롬프트」 절의 6항목 구조를 따른다.',
+      '사주 분석 통합 (basic/fortune/yongsin/school_compare/yongsin_method). 호출 전 사용자에게 이름(한글)·한자(선택)·양력/음력·생년월일시·윤달(음력 시)·성별·태어난 시군구를 확인할 것. 대화형 상세 해석 문장은 docs/references/interpretation-guide.md의 6항목 구조를 따른다.',
     inputSchema: {
       type: 'object',
       properties: {

@@ -28,7 +28,7 @@
     |
 [L1.5] src/schemas/      Zod 입력 검증 스키마
     |
-[L2] src/tools/           도구 핸들러 (9개 파일)
+[L2] src/tools/           도구 핸들러 (7개)
     |   입력 변환 + lib 호출 + 결과 JSON 직렬화
     |
 [L3] src/lib/             비즈니스 로직 (~30개 모듈)
