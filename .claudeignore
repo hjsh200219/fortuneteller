@@ -1,0 +1,61 @@
+# Dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# Build output
+.next/
+out/
+dist/
+build/
+.turbo/
+
+# Cache
+.cache/
+.eslintcache
+tsconfig.tsbuildinfo
+
+# Generated
+*.lock
+package-lock.json
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test artifacts
+coverage/
+playwright-report/
+test-results/
+.playwright-mcp/
+
+# Harness temp
+_workspace/
+.omc/
+.gstack/
+
+# Env files (sensitive)
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+
+# Images (large binaries)
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.ico
+*.svg
+!public/favicon.ico
+
