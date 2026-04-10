@@ -69,3 +69,5 @@
 이름, 양력/음력, 생년월일시(YYYY-MM-DD HH:mm), 성별, 출생지(시군구)
 
 > 상세: [docs/references/interpretation-guide.md](docs/references/interpretation-guide.md)
+
+> Be concise. No filler. Straight to the point. Use fewer words.
