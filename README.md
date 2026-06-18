@@ -22,12 +22,14 @@ A Model Context Protocol (MCP) server for Korean traditional Saju (Four Pillars 
 - **지장간 세력**: 절기별 지장간 세력 계산으로 정밀한 분석
 - **신살(神殺)**: 15개 신살 탐지 (원진살, 귀문관살 포함)
 
-### 🆕 v1.1.0 신규 기능
+### 🆕 v1.2.0 신규 기능
 - **7개 통합 도구**: 15개 개별 도구를 7개로 최적화 (토큰 효율 40% 개선)
 - **로컬 테이블**: 1900-2200년 음양력 데이터 (외부 API 의존성 제거)
 - **Zod 입력 검증**: 런타임 타입 검증으로 에러율 40% 감소
 - **date-fns 통합**: 타임존 버그 제거 및 정밀한 날짜 처리
 - **MCP SDK v1.18**: 최신 프로토콜 및 성능 최적화
+- **Smithery 지원**: stateless export, npm 패키지 배포 병행
+- **HTTP 서버 모드**: `npm run start:http` (Railway 배포용)
 
 ## 🚀 시작하기
 
@@ -227,8 +229,11 @@ npm start
 ```
 fortuneteller/
 ├── src/
-│   ├── index.ts              # MCP 서버 진입점
+│   ├── index.ts              # MCP 서버 진입점 (stdio)
+│   ├── server-http.ts        # HTTP 서버 진입점 (Railway 배포용)
+│   ├── smithery.ts           # Smithery stateless export
 │   ├── core/                 # 핵심 시스템
+│   │   ├── server.ts            # MCP 서버 초기화
 │   │   ├── tool-definitions.ts  # 7개 도구 정의
 │   │   └── tool-handler.ts      # 도구 라우팅
 │   ├── tools/                # MCP 도구 구현
@@ -249,19 +254,29 @@ fortuneteller/
 │   │   ├── ten_gods.ts       # 십성 계산
 │   │   ├── sin_sal.ts        # 신살 탐지 (15개)
 │   │   ├── day_master_strength.ts  # 일간 강약
-│   │   └── gyeok_guk.ts      # 격국 결정
+│   │   ├── gyeok_guk.ts      # 격국 결정
+│   │   └── ...               # 세운/월운/대운/일주 상세 분석 모듈
 │   ├── data/                 # 정적 데이터
 │   │   ├── heavenly_stems.ts      # 천간(天干) 10개
 │   │   ├── earthly_branches.ts    # 지지(地支) 12개, 지장간 세력
 │   │   ├── wuxing.ts              # 오행(五行) 상생상극
-│   │   ├── solar_terms.ts         # 24절기 (1900-2200)
-│   │   ├── lunar_table.ts         # 음력 테이블 (1900-2200)
+│   │   ├── solar_terms.ts         # 24절기 진입점
+│   │   ├── solar_terms_complete.ts # 24절기 통합 (1900-2200)
+│   │   ├── lunar_table.ts         # 음력 테이블 진입점
+│   │   ├── manselyeok_table.ts    # 만세력 기준 테이블
 │   │   └── longitude_table.ts     # 전국 162개 시군구 경도
+│   ├── schemas/              # Zod 스키마 정의
+│   ├── utils/                # 유틸리티 (날짜 처리 등)
+│   ├── benchmark/            # 성능 벤치마크
 │   └── types/                # 타입 정의
 │       └── index.ts
+├── scripts/                  # 검증·성능 테스트 스크립트
 ├── package.json
 ├── tsconfig.json
-├── CLAUDE.md                 # Claude Code 가이드
+├── docker-compose.yml
+├── railway.json              # Railway 배포 설정
+├── smithery.yaml             # Smithery 마켓플레이스 설정
+├── AGENTS.md                 # Claude Code 가이드
 └── README.md
 ```
 
@@ -414,7 +429,7 @@ MIT License
 
 **Option 1: Automatic Installation Script (Recommended)**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/hoshin/saju-mcp-server/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/hjsh200219/fortuneteller/main/install.sh | bash
 ```
 
 **Option 2: Manual Installation**
