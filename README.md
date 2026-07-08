@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/hjsh200219-fortuneteller-badge.png)](https://mseep.ai/app/hjsh200219-fortuneteller)
+
 # 🔮 사주 운세 MCP 서버 (Saju MCP Server)
 
 [![npm version](https://img.shields.io/npm/v/@hoshin/saju-mcp-server)](https://www.npmjs.com/package/@hoshin/saju-mcp-server)
