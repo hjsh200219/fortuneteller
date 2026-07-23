@@ -1,0 +1,46 @@
+name: Release MCPB
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: 태그와 package.json 버전 일치 확인
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          PKG_VERSION="$(node -p "require('./package.json').version")"
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "::error::태그 v$TAG_VERSION 와 package.json $PKG_VERSION 불일치"
+            exit 1
+          fi
+
+      - name: 테스트
+        run: npx jest --forceExit
+
+      - name: 번들 빌드
+        run: npm run build:mcpb
+
+      - name: 릴리스 생성 및 파일 첨부
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title "사주 MCP 서버 $GITHUB_REF_NAME" \
+            --generate-notes \
+            saju-mcp-server-*.mcpb
