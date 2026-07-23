@@ -214,6 +214,16 @@ const toolSchemaFactories: Record<string, () => Tool> = {
       required: ['action'],
     },
   }),
+
+  get_design_template: () => ({
+    name: 'get_design_template',
+    description:
+      '사주 시각화 디자인 킷(CSS 토큰·컴포넌트·사용 지침) 반환. 결과를 아티팩트로 구성할 때 기준으로 사용. 인자 없음.',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+    },
+  }),
 };
 
 /**

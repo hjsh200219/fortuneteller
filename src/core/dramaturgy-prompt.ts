@@ -59,7 +59,11 @@ export const DRAMATURGY_SUPPORTED_TOOLS = [
   'get_fortune_by_period',
 ] as const;
 
-export const DRAMATURGY_EXCLUDED_TOOLS = ['convert_calendar', 'manage_settings'] as const;
+export const DRAMATURGY_EXCLUDED_TOOLS = [
+  'convert_calendar',
+  'manage_settings',
+  'get_design_template',
+] as const;
 
 export type DramaturgySupportedTool = (typeof DRAMATURGY_SUPPORTED_TOOLS)[number];
 

@@ -13,6 +13,7 @@ import {
   handleGetDailyFortune,
   handleGetDaeUn,
   handleGetFortuneByPeriod,
+  handleGetDesignTemplate,
 } from '../tools/index.js';
 
 /**
@@ -40,6 +41,9 @@ export async function handleToolCall(name: string, args: unknown): Promise<strin
 
     case 'get_fortune_by_period':
       return handleGetFortuneByPeriod(args as Parameters<typeof handleGetFortuneByPeriod>[0]);
+
+    case 'get_design_template':
+      return handleGetDesignTemplate();
 
     default:
       throw new Error(`알 수 없는 도구: ${name}`);

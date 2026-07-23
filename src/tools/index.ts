@@ -15,3 +15,4 @@ export { handleConvertCalendar } from './convert_calendar.js';
 export { handleGetDailyFortune } from './get_daily_fortune.js';
 export { handleGetDaeUn } from './get_dae_un.js';
 export { handleGetFortuneByPeriod } from './get_fortune_by_period.js';
+export { handleGetDesignTemplate } from './get_design_template.js';
