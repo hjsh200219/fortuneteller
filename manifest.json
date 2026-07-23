@@ -1,0 +1,51 @@
+{
+  "manifest_version": "0.3",
+  "name": "saju-mcp-server",
+  "display_name": "사주 운세 (Saju)",
+  "version": "0.0.0",
+  "description": "한국 전통 사주팔자 운세 분석 — 사주·운세·궁합·대운·음양력 변환",
+  "long_description": "생년월일시로부터 사주팔자를 계산하고 운세·궁합·대운·용신을 분석하는 MCP 서버입니다. 1900-2200년 음양력 로컬 테이블을 내장해 외부 API 없이 동작하며, `첫 징후 → 균열 → 반전 → 선택의 문` 구조의 드라마투르기 상담 지침을 제공합니다.",
+  "author": {
+    "name": "Hoshin"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mmdal0857/fortuneteller.git"
+  },
+  "homepage": "https://github.com/mmdal0857/fortuneteller",
+  "support": "https://github.com/mmdal0857/fortuneteller/issues",
+  "server": {
+    "type": "node",
+    "entry_point": "dist/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/dist/index.js"]
+    }
+  },
+  "tools": [
+    { "name": "analyze_saju", "description": "사주팔자 통합 분석 (기본 계산·운세·용신·유파 비교)" },
+    { "name": "check_compatibility", "description": "두 사람 궁합 분석" },
+    { "name": "convert_calendar", "description": "양력↔음력 변환" },
+    { "name": "get_daily_fortune", "description": "일일 운세" },
+    { "name": "get_dae_un", "description": "10년 단위 대운 조회" },
+    { "name": "get_fortune_by_period", "description": "연·월·시간대별 운세" },
+    { "name": "manage_settings", "description": "해석 설정 관리" },
+    { "name": "get_design_template", "description": "사주 시각화 디자인 템플릿" }
+  ],
+  "prompts": [
+    {
+      "name": "dramatic_saju_consultation",
+      "description": "드라마투르기 구조(첫 징후→균열→반전→선택의 문)의 사주 상담",
+      "arguments": ["focus"],
+      "text": "사주 상담을 드라마투르기 구조(첫 징후 → 균열 → 반전 → 선택의 문)로 진행해줘. 지금 가장 궁금한 것: ${arguments.focus}"
+    }
+  ],
+  "keywords": ["saju", "fortune", "korean-astrology", "사주팔자", "운세", "궁합"],
+  "license": "MIT",
+  "compatibility": {
+    "platforms": ["darwin", "win32"],
+    "runtimes": {
+      "node": ">=18.0.0"
+    }
+  }
+}

@@ -35,7 +35,7 @@ Anthropic 공식 **MCP Bundle(MCPB, 구 DXT)** 포맷.
 - `version`: 빌드 시 `package.json`에서 자동 주입 (수동 동기화 금지)
 - `server`: `type: "node"`, `entry_point: "dist/index.js"`, `mcp_config.command: "node"`, `args: ["${__dirname}/dist/index.js"]`
 - `user_config` 없음 — API 키가 필요 없는 서버이므로 설치 창에서 아무것도 묻지 않는다
-- `tools`: 7개 통합 도구 이름·한 줄 설명 명시 → 설치 대화상자에 도구 목록 표시
+- `tools`: 8개 통합 도구 이름·한 줄 설명 명시 (`get_design_template` 포함) → 설치 대화상자에 도구 목록 표시
 - `prompts`: `dramatic_saju_consultation` 명시
 - `compatibility.platforms`: `["darwin", "win32"]`, `runtimes.node: ">=18.0.0"`
 - 리포 루트의 manifest는 버전 필드를 placeholder(`0.0.0`)로 두고, 빌드 스크립트가 스테이징 복사본에 실제 버전을 기록한다
