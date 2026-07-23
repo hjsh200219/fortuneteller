@@ -31,6 +31,18 @@ A Model Context Protocol (MCP) server for Korean traditional Saju (Four Pillars 
 - **Smithery 지원**: stateless export, npm 패키지 배포 병행
 - **HTTP 서버 모드**: `npm run start:http` (Railway 배포용)
 
+## 🎭 드라마투르기 상담
+
+사주·운세·궁합 도구는 계산 결과를 한 번에 나열하지 않고 `첫 징후 → 균열 → 반전 → 선택의 문` 순서로 풀어내는 상담 지침을 제공합니다.
+
+- 지원 클라이언트에는 서버 연결 시 상담 지침이 자동 전달됩니다.
+- MCP prompt를 지원하는 클라이언트에서는 `dramatic_saju_consultation`을 선택할 수 있습니다.
+- 선택 인자 `focus`에 지금 가장 궁금한 한 가지를 전달할 수 있습니다.
+- 계산 JSON과 10단계 사주 파이프라인은 변경하지 않습니다.
+- 달력 변환과 설정 관리는 간결한 유틸리티 응답을 유지합니다.
+
+표현 품질은 MCP 클라이언트의 prompt 및 server instructions 지원 여부에 따라 달라질 수 있습니다.
+
 ## 🚀 시작하기
 
 ### 필수 요구사항
@@ -422,6 +434,7 @@ MIT License
 - **Yong-sin (用神) Analysis**: Personalized advice on colors, directions, and careers
 - **Ji-jang-gan Strength**: Precise analysis with seasonal hidden stem strength calculation
 - **Sin-sal (神殺)**: Detection of 15 special stars (including Won-jin-sal, Gwi-mun-gwan-sal)
+- **Dramaturgic Consultation**: Fact-grounded, staged readings through automatic server instructions and the optional `dramatic_saju_consultation` MCP prompt
 
 ### 🚀 Quick Start
 
