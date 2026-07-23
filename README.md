@@ -43,6 +43,15 @@ A Model Context Protocol (MCP) server for Korean traditional Saju (Four Pillars 
 
 표현 품질은 MCP 클라이언트의 prompt 및 server instructions 지원 여부에 따라 달라질 수 있습니다.
 
+## 🎨 시각화 디자인 킷
+
+`get_design_template` 도구는 사주 결과를 시각화할 때 쓰는 기본 디자인 구조(CSS 토큰, 컴포넌트, 사용 지침)를 반환합니다.
+
+- 클라이언트 LLM이 킷을 받아 결과 데이터를 채워 자립형 HTML 아티팩트를 구성합니다.
+- 오행 5색 팔레트와 사주판·오행 바·점수 게이지·십성 태그·대운 타임라인·섹션 카드 컴포넌트를 제공합니다.
+- 단계적 공개 중에는 부분 컴포넌트만, 전체 화면은 상담 마무리나 시각화 요청 시 구성합니다.
+- 외부 폰트·CDN·스크립트 의존이 없는 완전 자립형입니다.
+
 ## 🚀 시작하기
 
 ### 필수 요구사항
@@ -92,7 +101,7 @@ npm run build
 npm start
 ```
 
-## 🛠️ MCP 도구 (총 7개 - 통합 최적화)
+## 🛠️ MCP 도구 (총 8개 - 통합 최적화)
 
 ### 1. analyze_saju
 사주 분석 통합 도구 (기본 계산, 운세, 용신, 유파 비교, 용신 방법론).
@@ -236,6 +245,9 @@ npm start
 }
 ```
 
+### 8. get_design_template
+사주 시각화 디자인 킷(CSS 토큰·컴포넌트·사용 지침)을 반환합니다. 인자가 없습니다.
+
 ## 📁 프로젝트 구조
 
 ```
@@ -246,7 +258,7 @@ fortuneteller/
 │   ├── smithery.ts           # Smithery stateless export
 │   ├── core/                 # 핵심 시스템
 │   │   ├── server.ts            # MCP 서버 초기화
-│   │   ├── tool-definitions.ts  # 7개 도구 정의
+│   │   ├── tool-definitions.ts  # 8개 도구 정의
 │   │   └── tool-handler.ts      # 도구 라우팅
 │   ├── tools/                # MCP 도구 구현
 │   │   ├── analyze_saju.ts      # 통합 사주 분석
@@ -435,6 +447,7 @@ MIT License
 - **Ji-jang-gan Strength**: Precise analysis with seasonal hidden stem strength calculation
 - **Sin-sal (神殺)**: Detection of 15 special stars (including Won-jin-sal, Gwi-mun-gwan-sal)
 - **Dramaturgic Consultation**: Fact-grounded, staged readings through automatic server instructions and the optional `dramatic_saju_consultation` MCP prompt
+- **Visual Design Kit**: Base design tokens, components, and usage guide via the `get_design_template` tool for client-rendered HTML artifacts
 
 ### 🚀 Quick Start
 
