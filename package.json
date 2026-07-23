@@ -15,6 +15,7 @@
   ],
   "scripts": {
     "build": "tsc",
+    "build:mcpb": "node scripts/build-mcpb.mjs",
     "dev": "tsx src/index.ts",
     "start": "node dist/index.js",
     "start:http": "node dist/server-http.js",
