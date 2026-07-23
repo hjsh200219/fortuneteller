@@ -5,6 +5,7 @@ import {
   DRAMATURGY_INSTRUCTIONS,
   DRAMATURGY_PROMPT_NAME,
 } from '../src/core/dramaturgy-prompt.js';
+import { DESIGN_KIT_INSTRUCTIONS } from '../src/core/design-kit.js';
 import { createMCPServer } from '../src/core/server.js';
 
 describe('MCP 드라마투르기 prompt 배선', () => {
@@ -28,8 +29,11 @@ describe('MCP 드라마투르기 prompt 배선', () => {
     await server.close();
   });
 
-  test('초기화 결과에 자동 지침과 prompts capability가 있다', () => {
-    expect(client.getInstructions()).toBe(DRAMATURGY_INSTRUCTIONS);
+  test('초기화 결과에 드라마투르기·디자인 킷 지침과 prompts capability가 있다', () => {
+    const instructions = client.getInstructions();
+
+    expect(instructions).toContain(DRAMATURGY_INSTRUCTIONS);
+    expect(instructions).toContain(DESIGN_KIT_INSTRUCTIONS);
     expect(client.getServerCapabilities()).toMatchObject({
       tools: {},
       prompts: {},

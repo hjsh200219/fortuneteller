@@ -23,6 +23,7 @@ import {
   DRAMATURGY_PROMPT_NAME,
   createDramaturgyPrompt,
 } from './dramaturgy-prompt.js';
+import { DESIGN_KIT_INSTRUCTIONS } from './design-kit.js';
 import { TOOL_DEFINITIONS, AVAILABLE_TOOLS, getToolSchema } from './tool-definitions.js';
 import { handleToolCall } from './tool-handler.js';
 
@@ -53,7 +54,7 @@ export function createMCPServer(options: ServerOptions = {}): Server {
         tools: {},
         prompts: {},
       },
-      instructions: DRAMATURGY_INSTRUCTIONS,
+      instructions: `${DRAMATURGY_INSTRUCTIONS}\n\n${DESIGN_KIT_INSTRUCTIONS}`,
     }
   );
 
