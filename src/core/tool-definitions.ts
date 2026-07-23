@@ -4,6 +4,7 @@
  */
 
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import { DRAMATURGY_TOOL_DESCRIPTION_SUFFIX } from './dramaturgy-prompt.js';
 
 /**
  * 도구 스키마 팩토리 함수들
@@ -13,7 +14,8 @@ const toolSchemaFactories: Record<string, () => Tool> = {
   analyze_saju: () => ({
     name: 'analyze_saju',
     description:
-      '사주 분석 통합 (basic/fortune/yongsin/school_compare/yongsin_method). 호출 전 사용자에게 이름(한글)·한자(선택)·양력/음력·생년월일시·윤달(음력 시)·성별·태어난 시군구를 확인할 것. 대화형 상세 해석 문장은 docs/references/interpretation-guide.md의 6항목 구조를 따른다.',
+      '사주 분석 통합 (basic/fortune/yongsin/school_compare/yongsin_method). 호출 전 사용자에게 이름(한글)·한자(선택)·양력/음력·생년월일시·윤달(음력 시)·성별·태어난 시군구를 확인할 것. 대화형 상세 해석 문장은 docs/references/interpretation-guide.md의 6항목 구조를 따른다.' +
+      DRAMATURGY_TOOL_DESCRIPTION_SUFFIX,
     inputSchema: {
       type: 'object',
       properties: {
@@ -55,7 +57,8 @@ const toolSchemaFactories: Record<string, () => Tool> = {
   check_compatibility: () => ({
     name: 'check_compatibility',
     description:
-      '두 사람 궁합 분석. 각 사람마다 이름(한글)·한자(선택)·양력/음력·생년월일시·성별·출생 시군구를 호출 전에 확인할 것.',
+      '두 사람 궁합 분석. 각 사람마다 이름(한글)·한자(선택)·양력/음력·생년월일시·성별·출생 시군구를 호출 전에 확인할 것.' +
+      DRAMATURGY_TOOL_DESCRIPTION_SUFFIX,
     inputSchema: {
       type: 'object',
       properties: {
@@ -112,7 +115,8 @@ const toolSchemaFactories: Record<string, () => Tool> = {
   get_daily_fortune: () => ({
     name: 'get_daily_fortune',
     description:
-      '일일 운세. 호출 전 사용자에게 이름(한글)·한자(선택)·양력/음력·생년월일시·성별·출생 시군구를 확인할 것.',
+      '일일 운세. 호출 전 사용자에게 이름(한글)·한자(선택)·양력/음력·생년월일시·성별·출생 시군구를 확인할 것.' +
+      DRAMATURGY_TOOL_DESCRIPTION_SUFFIX,
     inputSchema: {
       type: 'object',
       properties: {
@@ -134,7 +138,8 @@ const toolSchemaFactories: Record<string, () => Tool> = {
   get_dae_un: () => ({
     name: 'get_dae_un',
     description:
-      '10년 대운 (나이는 만 나이 기준, targetYear는 해당 양력 연도 말일 기준 만 나이로 구간 조회). 호출 전 사용자에게 이름(한글)·한자(선택)·양력/음력·생년월일시·성별·출생 시군구를 확인할 것.',
+      '10년 대운 (나이는 만 나이 기준, targetYear는 해당 양력 연도 말일 기준 만 나이로 구간 조회). 호출 전 사용자에게 이름(한글)·한자(선택)·양력/음력·생년월일시·성별·출생 시군구를 확인할 것.' +
+      DRAMATURGY_TOOL_DESCRIPTION_SUFFIX,
     inputSchema: {
       type: 'object',
       properties: {
@@ -161,7 +166,8 @@ const toolSchemaFactories: Record<string, () => Tool> = {
   get_fortune_by_period: () => ({
     name: 'get_fortune_by_period',
     description:
-      '시간대별 운세 (year/month/hour/multi-year). 호출 전 사용자에게 이름(한글)·한자(선택)·양력/음력·생년월일시·성별·출생 시군구를 확인할 것.',
+      '시간대별 운세 (year/month/hour/multi-year). 호출 전 사용자에게 이름(한글)·한자(선택)·양력/음력·생년월일시·성별·출생 시군구를 확인할 것.' +
+      DRAMATURGY_TOOL_DESCRIPTION_SUFFIX,
     inputSchema: {
       type: 'object',
       properties: {
