@@ -1,4 +1,4 @@
-﻿/**
+/**
  * MCP 서버 핵심 로직
  * Core Server Logic
  *
@@ -8,11 +8,22 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import {
   CallToolRequestSchema,
+  GetPromptRequestSchema,
+  ListPromptsRequestSchema,
   ListToolsRequestSchema,
   type CallToolRequest,
+  type GetPromptRequest,
+  type ListPromptsRequest,
   type ListToolsRequest,
 } from '@modelcontextprotocol/sdk/types.js';
 
+import {
+  DRAMATURGY_INSTRUCTIONS,
+  DRAMATURGY_PROMPT,
+  DRAMATURGY_PROMPT_NAME,
+  createDramaturgyPrompt,
+} from './dramaturgy-prompt.js';
+import { DESIGN_KIT_INSTRUCTIONS } from './design-kit.js';
 import { TOOL_DEFINITIONS, AVAILABLE_TOOLS, getToolSchema } from './tool-definitions.js';
 import { handleToolCall } from './tool-handler.js';
 
@@ -41,9 +52,23 @@ export function createMCPServer(options: ServerOptions = {}): Server {
     {
       capabilities: {
         tools: {},
+        prompts: {},
       },
+      instructions: `${DRAMATURGY_INSTRUCTIONS}\n\n${DESIGN_KIT_INSTRUCTIONS}`,
     }
   );
+
+  server.setRequestHandler(ListPromptsRequestSchema, async (_request: ListPromptsRequest) => ({
+    prompts: [DRAMATURGY_PROMPT],
+  }));
+
+  server.setRequestHandler(GetPromptRequestSchema, async (request: GetPromptRequest) => {
+    if (request.params.name !== DRAMATURGY_PROMPT_NAME) {
+      throw new Error(`알 수 없는 프롬프트: ${request.params.name}`);
+    }
+
+    return createDramaturgyPrompt(request.params.arguments?.focus);
+  });
 
   // 도구 목록 핸들러 등록
   server.setRequestHandler(ListToolsRequestSchema, async (_request: ListToolsRequest) => {

@@ -31,28 +31,46 @@ A Model Context Protocol (MCP) server for Korean traditional Saju (Four Pillars 
 - **Smithery 지원**: stateless export, npm 패키지 배포 병행
 - **HTTP 서버 모드**: `npm run start:http` (Railway 배포용)
 
+## 🎭 드라마투르기 상담
+
+사주·운세·궁합 도구는 계산 결과를 한 번에 나열하지 않고 `첫 징후 → 균열 → 반전 → 선택의 문` 순서로 풀어내는 상담 지침을 제공합니다.
+
+- 지원 클라이언트에는 서버 연결 시 상담 지침이 자동 전달됩니다.
+- MCP prompt를 지원하는 클라이언트에서는 `dramatic_saju_consultation`을 선택할 수 있습니다.
+- 선택 인자 `focus`에 지금 가장 궁금한 한 가지를 전달할 수 있습니다.
+- 계산 JSON과 10단계 사주 파이프라인은 변경하지 않습니다.
+- 달력 변환과 설정 관리는 간결한 유틸리티 응답을 유지합니다.
+
+표현 품질은 MCP 클라이언트의 prompt 및 server instructions 지원 여부에 따라 달라질 수 있습니다.
+
+## 🎨 시각화 디자인 킷
+
+`get_design_template` 도구는 사주 결과를 시각화할 때 쓰는 기본 디자인 구조(CSS 토큰, 컴포넌트, 사용 지침)를 반환합니다.
+
+- 클라이언트 LLM이 킷을 받아 결과 데이터를 채워 자립형 HTML 아티팩트를 구성합니다.
+- 오행 5색 팔레트와 사주판·오행 바·점수 게이지·십성 태그·대운 타임라인·섹션 카드 컴포넌트를 제공합니다.
+- 단계적 공개 중에는 부분 컴포넌트만, 전체 화면은 상담 마무리나 시각화 요청 시 구성합니다.
+- 외부 폰트·CDN·스크립트 의존이 없는 완전 자립형입니다.
+
 ## 🚀 시작하기
 
-### 필수 요구사항
+### 원클릭 설치 (초보자용 — Node.js 설치 불필요)
 
-- Node.js 18 이상
-- npm, yarn, 또는 pnpm
+Claude Desktop 앱만 있으면 됩니다. 터미널도, Node.js도, 설정 파일 편집도 필요 없습니다.
 
-### 설치
+1. **[최신 릴리스 페이지](https://github.com/mmdal0857/fortuneteller/releases/latest)** 에서 `saju-mcp-server-x.x.x.mcpb` 파일을 다운로드합니다.
+2. 다운로드한 파일을 **더블클릭**합니다. Claude Desktop이 열리며 설치 창이 표시됩니다.
+3. **"설치"** 버튼을 클릭합니다.
 
-#### 자동 설치 스크립트 (가장 간편)
+설치가 끝나면 Claude Desktop 채팅에서 바로 사용할 수 있습니다. 예: *"1990년 3월 15일 오전 10시 30분생 남자 사주 봐줘"*
 
-```bash
-# 설치 스크립트 다운로드 및 실행
-curl -fsSL https://raw.githubusercontent.com/hjsh200219/fortuneteller/main/install.sh | bash
-```
+> Claude Desktop이 없다면 [claude.ai/download](https://claude.ai/download)에서 먼저 설치하세요.
 
-이 스크립트는 다음을 자동으로 수행합니다:
-- npm 패키지 전역 설치
-- Claude Desktop 설정 파일에 MCP 서버 자동 등록
-- 기존 설정 백업
+### 개발자용 설치
 
-#### 수동 설치
+**필수 요구사항**: Node.js 18 이상, npm/yarn/pnpm
+
+#### npm 설치
 
 ```bash
 # npm으로 전역 설치
@@ -60,6 +78,13 @@ npm install -g @hoshin/saju-mcp-server
 
 # 또는 npx로 직접 실행
 npx @hoshin/saju-mcp-server
+```
+
+#### 자동 설치 스크립트 (macOS)
+
+```bash
+# npm 전역 설치 + Claude Desktop 설정 자동 등록
+curl -fsSL https://raw.githubusercontent.com/hjsh200219/fortuneteller/main/install.sh | bash
 ```
 
 #### 소스에서 빌드
@@ -78,9 +103,12 @@ npm run dev
 # 프로덕션 빌드
 npm run build
 npm start
+
+# .mcpb 원클릭 설치 파일 빌드
+npm run build:mcpb
 ```
 
-## 🛠️ MCP 도구 (총 7개 - 통합 최적화)
+## 🛠️ MCP 도구 (총 8개 - 통합 최적화)
 
 ### 1. analyze_saju
 사주 분석 통합 도구 (기본 계산, 운세, 용신, 유파 비교, 용신 방법론).
@@ -224,6 +252,9 @@ npm start
 }
 ```
 
+### 8. get_design_template
+사주 시각화 디자인 킷(CSS 토큰·컴포넌트·사용 지침)을 반환합니다. 인자가 없습니다.
+
 ## 📁 프로젝트 구조
 
 ```
@@ -234,7 +265,7 @@ fortuneteller/
 │   ├── smithery.ts           # Smithery stateless export
 │   ├── core/                 # 핵심 시스템
 │   │   ├── server.ts            # MCP 서버 초기화
-│   │   ├── tool-definitions.ts  # 7개 도구 정의
+│   │   ├── tool-definitions.ts  # 8개 도구 정의
 │   │   └── tool-handler.ts      # 도구 라우팅
 │   ├── tools/                # MCP 도구 구현
 │   │   ├── analyze_saju.ts      # 통합 사주 분석
@@ -422,6 +453,8 @@ MIT License
 - **Yong-sin (用神) Analysis**: Personalized advice on colors, directions, and careers
 - **Ji-jang-gan Strength**: Precise analysis with seasonal hidden stem strength calculation
 - **Sin-sal (神殺)**: Detection of 15 special stars (including Won-jin-sal, Gwi-mun-gwan-sal)
+- **Dramaturgic Consultation**: Fact-grounded, staged readings through automatic server instructions and the optional `dramatic_saju_consultation` MCP prompt
+- **Visual Design Kit**: Base design tokens, components, and usage guide via the `get_design_template` tool for client-rendered HTML artifacts
 
 ### 🚀 Quick Start
 

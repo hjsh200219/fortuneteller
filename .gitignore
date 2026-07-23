@@ -56,3 +56,6 @@ coverage/
 
 # 하네스 GC 작업 디렉토리
 _workspace/
+# MCPB bundle build
+.mcpb-staging/
+*.mcpb
