@@ -54,26 +54,23 @@ A Model Context Protocol (MCP) server for Korean traditional Saju (Four Pillars 
 
 ## 🚀 시작하기
 
-### 필수 요구사항
+### 원클릭 설치 (초보자용 — Node.js 설치 불필요)
 
-- Node.js 18 이상
-- npm, yarn, 또는 pnpm
+Claude Desktop 앱만 있으면 됩니다. 터미널도, Node.js도, 설정 파일 편집도 필요 없습니다.
 
-### 설치
+1. **[최신 릴리스 페이지](https://github.com/mmdal0857/fortuneteller/releases/latest)** 에서 `saju-mcp-server-x.x.x.mcpb` 파일을 다운로드합니다.
+2. 다운로드한 파일을 **더블클릭**합니다. Claude Desktop이 열리며 설치 창이 표시됩니다.
+3. **"설치"** 버튼을 클릭합니다.
 
-#### 자동 설치 스크립트 (가장 간편)
+설치가 끝나면 Claude Desktop 채팅에서 바로 사용할 수 있습니다. 예: *"1990년 3월 15일 오전 10시 30분생 남자 사주 봐줘"*
 
-```bash
-# 설치 스크립트 다운로드 및 실행
-curl -fsSL https://raw.githubusercontent.com/hjsh200219/fortuneteller/main/install.sh | bash
-```
+> Claude Desktop이 없다면 [claude.ai/download](https://claude.ai/download)에서 먼저 설치하세요.
 
-이 스크립트는 다음을 자동으로 수행합니다:
-- npm 패키지 전역 설치
-- Claude Desktop 설정 파일에 MCP 서버 자동 등록
-- 기존 설정 백업
+### 개발자용 설치
 
-#### 수동 설치
+**필수 요구사항**: Node.js 18 이상, npm/yarn/pnpm
+
+#### npm 설치
 
 ```bash
 # npm으로 전역 설치
@@ -81,6 +78,13 @@ npm install -g @hoshin/saju-mcp-server
 
 # 또는 npx로 직접 실행
 npx @hoshin/saju-mcp-server
+```
+
+#### 자동 설치 스크립트 (macOS)
+
+```bash
+# npm 전역 설치 + Claude Desktop 설정 자동 등록
+curl -fsSL https://raw.githubusercontent.com/hjsh200219/fortuneteller/main/install.sh | bash
 ```
 
 #### 소스에서 빌드
@@ -99,6 +103,9 @@ npm run dev
 # 프로덕션 빌드
 npm run build
 npm start
+
+# .mcpb 원클릭 설치 파일 빌드
+npm run build:mcpb
 ```
 
 ## 🛠️ MCP 도구 (총 8개 - 통합 최적화)
