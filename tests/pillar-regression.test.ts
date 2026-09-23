@@ -17,6 +17,7 @@ import { selectMonthCommandStem } from '../src/lib/gyeok_guk.js';
 import { extractJiJangGan, calculateJiJangGanStrength, checkWolRyeong, analyzeBranchRelations } from '../src/data/earthly_branches.js';
 import type { SajuData } from '../src/types/index.js';
 import { findSinSals } from '../src/lib/sin_sal.js';
+import { checkCompatibility } from '../src/lib/compatibility.js';
 
 function pillars(date: string, time: string, gender: 'male' | 'female' = 'male'): string {
   const s = calculateSaju(date, time, 'solar', false, gender, '서울');
@@ -217,5 +218,25 @@ describe('지지 관계 — 반합은 왕지 포함, 충·육합 표시', () => 
   });
   test('인·사 두 글자도 형', () => {
     expect(analyzeBranchRelations(['인', '사', '자', '진']).samHyeong).toContain('무은지형 일부(인사)');
+  });
+});
+
+describe('궁합 — 두 사주 교차 합·충', () => {
+  // 1990-01-01 12:00 = 기사·병자·병인·갑오, 1991-06-15 12:00 = 신미·갑오·병진·갑오 (손으로 대조)
+  const a = calculateSaju('1990-01-01', '12:00', 'solar', false, 'male', '서울');
+  const b = calculateSaju('1991-06-15', '12:00', 'solar', false, 'female', '서울');
+  const items = checkCompatibility(a, b).crossRelations!.map((c) => `${c.kind}:${c.positions.join('')}:${c.chars.join('')}:${c.weight}`);
+
+  test('일간이 걸린 교차 천간합(병신)을 찾고 비일간끼리 합은 보지 않는다', () => {
+    expect(items.filter((i) => i.startsWith('천간합'))).toEqual(['천간합:일년:병신:2']);
+  });
+  test('지지 16쌍의 육합·반합·충·원진을 찾고, 일지가 걸리면 가중 2', () => {
+    expect(items.filter((i) => !i.startsWith('천간합')).sort()).toEqual(
+      ['원진:월년:자미:1', '충:월월:자오:1', '반합:월일:자진:2', '충:월시:자오:1', '반합:일월:인오:2', '반합:일시:인오:2', '육합:시년:오미:1'].sort()
+    );
+  });
+  test('같은 글자 자형은 교차에서 보지 않는다 (동갑 커플 년지 감점 방지)', () => {
+    const c = calculateSaju('1990-03-01', '12:00', 'solar', false, 'female', '서울');
+    expect(checkCompatibility(a, c).crossRelations!.some((r) => r.kind === '형' && r.chars[0] === r.chars[1])).toBe(false);
   });
 });

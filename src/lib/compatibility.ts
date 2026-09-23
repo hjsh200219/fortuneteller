@@ -13,6 +13,64 @@ const BRANCH_HAP: [EarthlyBranch, EarthlyBranch][] = [['자', '축'], ['인', '�
 const BRANCH_CHUNG: [EarthlyBranch, EarthlyBranch][] = [['자', '오'], ['축', '미'], ['인', '신'], ['묘', '유'], ['진', '술'], ['사', '해']];
 const BRANCH_WONJIN: [EarthlyBranch, EarthlyBranch][] = [['자', '미'], ['축', '오'], ['인', '유'], ['묘', '신'], ['진', '해'], ['사', '술']];
 const isPair = <T>(pairs: [T, T][], a: T, b: T) => pairs.some(([x, y]) => (x === a && y === b) || (x === b && y === a));
+/**
+ * 교차 형(刑): 인사신·축술미의 두 글자, 자묘.
+ * 같은 글자 자형(진진·해해 등)은 한 사주 안의 관계라 교차에서는 보지 않는다 — 동갑이면 년지가 늘 같아 감점이 굳는다.
+ */
+const BRANCH_HYEONG: [EarthlyBranch, EarthlyBranch][] = [
+  ['인', '사'], ['사', '신'], ['인', '신'], ['축', '술'], ['술', '미'], ['자', '묘'],
+];
+/** 삼합 그룹 [생지, 왕지, 고지] — 왕지가 낀 두 글자를 반합으로 본다 */
+const SAMHAP_GROUPS: EarthlyBranch[][] = [['신', '자', '진'], ['해', '묘', '미'], ['인', '오', '술'], ['사', '유', '축']];
+const isHalfSamHap = (a: EarthlyBranch, b: EarthlyBranch) =>
+  a !== b && SAMHAP_GROUPS.some((g) => g.includes(a) && g.includes(b) && (a === g[1] || b === g[1]));
+const POSITION_NAMES = ['년', '월', '일', '시'] as const;
+
+/** 교차 합·충 항목 — 사람1 자리·사람2 자리(년·월·일·시), 일지·일간이 걸리면 가중 2 */
+type CrossRelationItem = NonNullable<CompatibilityAnalysis['crossRelations']>[number];
+
+/**
+ * 두 사주 사이의 교차 합·충 — 일주끼리(일주 궁합에서 따로 봄)를 뺀 모든 자리 쌍
+ * 천간: 일간이 한쪽에 걸린 천간합만(비일간끼리는 잡음이 커서 제외). 지지: 16쌍 전부, 일지(배우자궁)가 걸리면 가중 2.
+ */
+function analyzeCrossRelations(person1: SajuData, person2: SajuData): {
+  items: CrossRelationItem[];
+  stemScore: number;
+  branchScore: number;
+} {
+  const pillars = (p: SajuData) => [p.year, p.month, p.day, p.hour];
+  const p1 = pillars(person1);
+  const p2 = pillars(person2);
+  const items: CrossRelationItem[] = [];
+
+  for (let i = 0; i < 4; i++) {
+    for (let j = 0; j < 4; j++) {
+      if (i === 2 && j === 2) continue; // 일주끼리는 analyzeDayPillarCompatibility
+      const positions: [string, string] = [POSITION_NAMES[i]!, POSITION_NAMES[j]!];
+      const s1 = p1[i]!.stem;
+      const s2 = p2[j]!.stem;
+      if ((i === 2 || j === 2) && isPair(STEM_HAP, s1, s2)) {
+        items.push({ kind: '천간합', positions, chars: [s1, s2], weight: 2 });
+      }
+      const b1 = p1[i]!.branch;
+      const b2 = p2[j]!.branch;
+      const weight = i === 2 || j === 2 ? 2 : 1;
+      if (isPair(BRANCH_HAP, b1, b2)) items.push({ kind: '육합', positions, chars: [b1, b2], weight });
+      else if (isHalfSamHap(b1, b2)) items.push({ kind: '반합', positions, chars: [b1, b2], weight });
+      if (isPair(BRANCH_CHUNG, b1, b2)) items.push({ kind: '충', positions, chars: [b1, b2], weight });
+      if (isPair(BRANCH_HYEONG, b1, b2)) items.push({ kind: '형', positions, chars: [b1, b2], weight });
+      if (isPair(BRANCH_WONJIN, b1, b2)) items.push({ kind: '원진', positions, chars: [b1, b2], weight });
+    }
+  }
+
+  // 16쌍을 다 보므로 항목당 점수는 작게 — 바닥·천장에 붙지 않게
+  const points: Record<CrossRelationItem['kind'], number> = { 천간합: 10, 육합: 6, 반합: 3, 충: -6, 형: -3, 원진: -3 };
+  const sumOf = (pred: (k: CrossRelationItem['kind']) => boolean) =>
+    items.filter((it) => pred(it.kind)).reduce((sum, it) => sum + points[it.kind] * it.weight, 0);
+  const stemScore = Math.max(15, Math.min(90, 50 + sumOf((k) => k === '천간합')));
+  const branchScore = Math.max(15, Math.min(90, 50 + sumOf((k) => k !== '천간합')));
+  return { items, stemScore, branchScore };
+}
 
 /**
  * 두 사람의 사주 궁합 분석
@@ -24,19 +82,14 @@ export function checkCompatibility(person1: SajuData, person2: SajuData): Compat
   // 2. 오행 조화
   const elementHarmony = analyzeElementHarmony(person1, person2);
 
-  // 3. 지지 충극 관계
-  const branchRelation = analyzeBranchRelation(person1, person2);
+  // 3. 교차 합·충 — 두 사주의 모든 자리 쌍(천간합·육합·반합·충·형·원진)
+  const cross = analyzeCrossRelations(person1, person2);
 
   // 4. 십성 궁합
   const tenGodsCompatibility = analyzeTenGodsCompatibility(person1, person2);
 
   // 종합 점수 계산
-  const compatibilityScore = calculateOverallScore(
-    dayCompatibility,
-    elementHarmony,
-    branchRelation,
-    tenGodsCompatibility
-  );
+  const compatibilityScore = calculateOverallScore(dayCompatibility, elementHarmony, cross, tenGodsCompatibility);
 
   // 장단점 분석
   const strengths: string[] = [];
@@ -57,11 +110,14 @@ export function checkCompatibility(person1: SajuData, person2: SajuData): Compat
     advice.push('상대방의 장점을 인정하고 이해하려 노력하세요');
   }
 
-  if (branchRelation.isHarmony) {
-    strengths.push('지지가 조화로워 편안한 관계를 유지합니다');
-  } else if (branchRelation.isConflict) {
-    weaknesses.push('지지가 충돌하여 예기치 않은 문제가 발생할 수 있습니다');
-    advice.push('감정적인 대립을 피하고 이성적으로 대화하세요');
+  const describe = (it: CrossRelationItem) =>
+    `${it.kind}: 첫째 ${it.positions[0]}${it.kind === '천간합' ? '간' : '지'} ${it.chars[0]} ↔ 둘째 ${it.positions[1]}${it.kind === '천간합' ? '간' : '지'} ${it.chars[1]}${it.weight === 2 ? ' (일주 걸림)' : ''}`;
+  const good = cross.items.filter((it) => ['천간합', '육합', '반합'].includes(it.kind));
+  const bad = cross.items.filter((it) => ['충', '형', '원진'].includes(it.kind));
+  if (good.length > 0) strengths.push(`서로 끌어당기는 교차 합이 있습니다 — ${good.map(describe).join(', ')}`);
+  if (bad.length > 0) {
+    weaknesses.push(`서로 부딪히는 교차 충·형·원진이 있습니다 — ${bad.map(describe).join(', ')}`);
+    if (bad.some((it) => it.weight === 2)) advice.push('배우자궁(일지)이 걸린 충·원진은 논리보다 시간을 두고 푸는 편이 낫습니다');
   }
 
   // 십성 궁합
@@ -85,6 +141,7 @@ export function checkCompatibility(person1: SajuData, person2: SajuData): Compat
     weaknesses,
     advice,
     elementHarmony,
+    crossRelations: cross.items,
   };
 }
 
@@ -164,70 +221,6 @@ function analyzeElementHarmony(
         : complementCount === 1
           ? '한쪽이 상대의 용신 오행을 넉넉히 갖고 있어 한 방향으로 채워 주는 관계입니다'
           : '서로의 용신을 직접 채워 주지는 않아, 각자의 특성을 존중하는 것이 중요합니다',
-  };
-}
-
-/**
- * 지지 충극 관계 분석
- */
-function analyzeBranchRelation(
-  person1: SajuData,
-  person2: SajuData
-): { isHarmony: boolean; isConflict: boolean; harmonyCount: number; conflictCount: number; description: string } {
-  // 간단한 지지 충극 판단
-  const branches1 = [person1.year.branch, person1.month.branch, person1.day.branch, person1.hour.branch];
-  const branches2 = [person2.year.branch, person2.month.branch, person2.day.branch, person2.hour.branch];
-
-  // 육합(六合) 관계 확인 (간단 버전)
-  const harmonyPairs = [
-    ['자', '축'],
-    ['인', '해'],
-    ['묘', '술'],
-    ['진', '유'],
-    ['사', '신'],
-    ['오', '미'],
-  ];
-
-  // 충(沖) 관계 확인
-  const conflictPairs = [
-    ['자', '오'],
-    ['축', '미'],
-    ['인', '신'],
-    ['묘', '유'],
-    ['진', '술'],
-    ['사', '해'],
-  ];
-
-  let harmonyCount = 0;
-  let conflictCount = 0;
-
-  branches1.forEach((b1) => {
-    branches2.forEach((b2) => {
-      harmonyPairs.forEach((pair) => {
-        if ((pair[0] === b1 && pair[1] === b2) || (pair[0] === b2 && pair[1] === b1)) {
-          harmonyCount++;
-        }
-      });
-
-      conflictPairs.forEach((pair) => {
-        if ((pair[0] === b1 && pair[1] === b2) || (pair[0] === b2 && pair[1] === b1)) {
-          conflictCount++;
-        }
-      });
-    });
-  });
-
-  return {
-    isHarmony: harmonyCount > 0,
-    isConflict: conflictCount > 0,
-    harmonyCount,
-    conflictCount,
-    description:
-      harmonyCount > conflictCount
-        ? '지지가 잘 어울립니다'
-        : conflictCount > 0
-          ? '지지에 충돌이 있어 주의가 필요합니다'
-          : '무난한 관계입니다',
   };
 }
 
@@ -369,24 +362,16 @@ function analyzeTenGodsCompatibility(
 function calculateOverallScore(
   dayCompatibility: { score: number },
   elementHarmony: { harmony: number },
-  branchRelation: { harmonyCount: number; conflictCount: number },
+  cross: { stemScore: number; branchScore: number },
   tenGodsCompatibility: { score: number }
 ): number {
-  let score = 0;
-
-  // 일주 궁합 (35%)
-  score += dayCompatibility.score * 0.35;
-
-  // 오행 조화 (30%)
-  score += elementHarmony.harmony * 0.3;
-
-  // 지지 관계 (20%)
-  const branchScore = Math.max(20, Math.min(90, 50 + 15 * (branchRelation.harmonyCount - branchRelation.conflictCount)));
-  score += branchScore * 0.2;
-
-  // 십성 궁합 (15%)
-  score += tenGodsCompatibility.score * 0.15;
-
+  // 일주 30% · 용신 보완 25% · 교차 지지 합충 25% · 교차 천간합 10% · 십성 10%
+  const score =
+    dayCompatibility.score * 0.3 +
+    elementHarmony.harmony * 0.25 +
+    cross.branchScore * 0.25 +
+    cross.stemScore * 0.1 +
+    tenGodsCompatibility.score * 0.1;
   return Math.round(score);
 }
 

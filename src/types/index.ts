@@ -228,6 +228,13 @@ export interface CompatibilityAnalysis {
     harmony: number; // 0-100
     description: string;
   };
+  /** 두 사주 사이 교차 합·충(일주끼리 제외) */
+  crossRelations?: {
+    kind: '천간합' | '육합' | '반합' | '충' | '형' | '원진';
+    positions: [string, string];
+    chars: [string, string];
+    weight: number;
+  }[];
 }
 
 // 일일 운세
