@@ -24,15 +24,16 @@ export function analyzeDayMasterStrength(sajuData: SajuData): {
 
   // 1. 월령 득실 (40점 만점)
   if (sajuData.wolRyeong) {
+    // strong=월지가 비겁(왕), medium=월지가 인성(생) — 둘 다 득령. weak=식상·재성·관성월 — 실령.
     if (sajuData.wolRyeong.strength === 'strong') {
       score += 40;
-      reasons.push('월령을 득하여 매우 강함');
+      reasons.push('월령(비겁)을 얻어 매우 강함');
     } else if (sajuData.wolRyeong.strength === 'medium') {
       score += 20;
-      reasons.push('월령이 중립적');
+      reasons.push('월령(인성)의 생을 받음');
     } else {
       score -= 20;
-      reasons.push('월령을 실하여 약함');
+      reasons.push('월령을 잃어 약함');
     }
   }
 

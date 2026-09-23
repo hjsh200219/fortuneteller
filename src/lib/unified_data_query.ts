@@ -9,10 +9,8 @@ import type { SolarTerm } from '../types/index.js';
 import { LRUCache } from './performance_cache.js';
 
 // 음력 데이터 import
-import { LUNAR_TABLE_1900_2019, getLunarYearData1900_2019, type LunarYearData } from '../data/lunar_table_1900_2019.js';
-import { LUNAR_TABLE_EXTENDED, getLunarYearData } from '../data/lunar_table_extended.js';
-import { LUNAR_TABLE_2031_2100, getLunarYearData2031_2100 } from '../data/lunar_table_2031_2100.js';
-import { LUNAR_TABLE_2101_2200, getLunarYearData2101_2200 } from '../data/lunar_table_2101_2200.js';
+import { getLunarYearData, type LunarYearData } from '../data/lunar_table.js';
+import { LUNAR_TABLE_1900_2200 } from '../data/lunar_table_1900_2200.js';
 
 // 절기 데이터 import
 import { getSolarTermsForYear, type SolarTermComplete } from '../data/solar_terms.js';
@@ -55,18 +53,7 @@ export function getUnifiedLunarYearData(year: number): LunarYearData | undefined
     return cached;
   }
 
-  // 연도 범위에 따라 적절한 데이터 소스 선택
-  let data: LunarYearData | undefined;
-
-  if (year >= 1900 && year <= 2019) {
-    data = getLunarYearData1900_2019(year);
-  } else if (year >= 2020 && year <= 2030) {
-    data = getLunarYearData(year);
-  } else if (year >= 2031 && year <= 2100) {
-    data = getLunarYearData2031_2100(year);
-  } else if (year >= 2101 && year <= 2200) {
-    data = getLunarYearData2101_2200(year);
-  }
+  const data = getLunarYearData(year) ?? undefined;
 
   // 캐시에 저장
   if (data) {
@@ -246,12 +233,7 @@ export function getDataStatistics(): {
     solarTermSize: number;
   };
 } {
-  const allLunarData = [
-    ...LUNAR_TABLE_1900_2019,
-    ...LUNAR_TABLE_EXTENDED,
-    ...LUNAR_TABLE_2031_2100,
-    ...LUNAR_TABLE_2101_2200,
-  ];
+  const allLunarData = LUNAR_TABLE_1900_2200;
 
   const allSolarTerms = getAllSolarTerms();
 

@@ -438,8 +438,8 @@ function evaluateFortune(
   else if (score >= 20) overall = '흉';
   else overall = '대흉';
 
-  // 세부 운세 (기본 점수에서 약간의 변동)
-  const variance = () => Math.floor(Math.random() * 20 - 10);
+  // 세부 운세 — 난수 변동 없음(같은 입력 = 같은 출력)
+  const variance = () => 0;
 
   return {
     overall,

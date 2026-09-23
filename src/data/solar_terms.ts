@@ -3,15 +3,12 @@
  * 사주 계산에서 월주를 정하는데 중요한 기준
  *
  * 연도별 테이블:
- * - 1900-2149: solar_terms_1900_2149.ts (JPL DE440s, KASI 공표값과 분 단위 일치)
- * - 2150-2200: solar_terms_2101_2200.ts (Jean Meeus 근사, 최대 약 30분 오차)
+ * - 1899(대설·동지·소한)-2200: solar_terms_1900_2200.ts (JPL DE440, KASI 공표값과 분 단위 일치)
  */
 
 import { formatInTimeZone } from 'date-fns-tz';
 import type { SolarTerm } from '../types/index.js';
-import type { SolarTermComplete } from './solar_terms_1900_2019.js';
-import { SOLAR_TERMS_1900_2149 } from './solar_terms_1900_2149.js';
-import { SOLAR_TERMS_2101_2200 } from './solar_terms_2101_2200.js';
+import { SOLAR_TERMS_1900_2200, type SolarTermComplete } from './solar_terms_1900_2200.js';
 
 export type { SolarTermComplete };
 
@@ -111,15 +108,10 @@ export function getSolarTermsForYear(year: number): SolarTermComplete[] {
   const cached = correctedCache.get(year);
   if (cached) return cached;
 
-  let raw: SolarTermComplete[];
-
-  if (year >= 1899 && year <= 2149) {
-    raw = SOLAR_TERMS_1900_2149.filter((data) => data.year === year);
-  } else if (year >= 2150 && year <= 2200) {
-    raw = SOLAR_TERMS_2101_2200.filter((data) => data.year === year);
-  } else {
+  if (year < 1899 || year > 2200) {
     return [];
   }
+  const raw = SOLAR_TERMS_1900_2200.filter((data) => data.year === year);
 
   const corrected = raw.map(correctTimestamp);
   correctedCache.set(year, corrected);

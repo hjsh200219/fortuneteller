@@ -490,10 +490,18 @@ export function checkWolRyeong(
     };
   }
 
+  // 남은 두 경우: 일간이 월지를 생(식상월 — 설기) 또는 극(재성월 — 소모). 둘 다 실령이다.
+  if (generationMap[dayStemElement] === primaryElement) {
+    return {
+      isDeukRyeong: false,
+      reason: `일간 ${dayStemElement}이(가) 월지 ${primaryElement}을(를) 생하여 기운이 빠지므로(식상월) 실령입니다`,
+      strength: 'weak',
+    };
+  }
   return {
     isDeukRyeong: false,
-    reason: '월지와 일간의 관계가 중립적입니다',
-    strength: 'medium',
+    reason: `일간 ${dayStemElement}이(가) 월지 ${primaryElement}을(를) 극하여 힘을 쓰므로(재성월) 실령입니다`,
+    strength: 'weak',
   };
 }
 

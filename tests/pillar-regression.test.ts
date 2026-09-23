@@ -11,6 +11,8 @@ import { SOLAR_TERMS_JIE } from '../src/data/solar_terms.js';
 import { analyzeWolUn } from '../src/lib/wol_un.js';
 import { analyzeWolun } from '../src/lib/wolun_analysis.js';
 import { getDayPillar } from '../src/lib/helpers.js';
+import { convertCalendar } from '../src/lib/calendar.js';
+import { analyzeIljin } from '../src/lib/iljin_analysis.js';
 
 function pillars(date: string, time: string, gender: 'male' | 'female' = 'male'): string {
   const s = calculateSaju(date, time, 'solar', false, gender, '서울');
@@ -107,5 +109,38 @@ describe('일진 — getDayPillar 가 calculateSaju 일주와 같다', () => {
       }
     }
     expect(mismatches).toEqual([]);
+  });
+});
+
+describe('음력 변환 — KASI 공표 음력과 일치하는 생성 테이블', () => {
+  // 기대값: KASI 음력(korean_lunar_calendar) — 수정 전 테이블은 1900-2049 중 149년의 달 일수가 틀렸다
+  test.each([
+    ['1901-06-15', '1901-04-29', false],
+    ['1984-11-22', '1984-10-30', false], // 1984 윤10월 전날
+    ['1984-11-23', '1984-10-01', true], // 윤10월 1일
+    ['2020-05-23', '2020-04-01', true], // 윤4월 1일
+    ['2026-02-16', '2025-12-29', false], // 설 전날(이전 테이블은 설 전을 전부 전년 12-31 로 뭉갰다)
+    ['2033-12-22', '2033-11-01', true], // 2033 윤11월
+  ])('양력 %s → 음력 %s (윤달 %s), 역변환 일치', (solar, lunar, leap) => {
+    const s2l = convertCalendar(solar, 'solar', 'lunar');
+    expect(s2l.convertedDate).toBe(lunar);
+    expect(!!s2l.isLeapMonth).toBe(leap);
+    expect(convertCalendar(lunar, 'lunar', 'solar', leap).convertedDate).toBe(solar);
+  });
+  test('음력 2월 30일은 양력 3월 1일로 바뀌지 않는다(없는 날이면 오류)', () => {
+    // 2026 음력 2월은 29일까지
+    expect(() => convertCalendar('2026-02-30', 'lunar', 'solar')).toThrow('없는 음력 날짜');
+  });
+});
+
+describe('일진 28수·12직', () => {
+  test('1970-01-01(목)은 두(斗)수, 2026-09-23(수)은 기(箕)수', () => {
+    const base = calculateSaju('1986-11-20', '10:00', 'solar', false, 'male', '서울');
+    expect(analyzeIljin(new Date(1970, 0, 1, 9), base).constellation.name).toBe('두');
+    expect(analyzeIljin(new Date(2026, 8, 23, 9), base).constellation.name).toBe('기');
+  });
+  test('12직: 월건 지지와 같은 지지의 날이 건 — 2024-01-01(갑자, 자월)은 건', () => {
+    const base = calculateSaju('1986-11-20', '10:00', 'solar', false, 'male', '서울');
+    expect(analyzeIljin(new Date(2024, 0, 1, 9), base).twelveGods.name).toBe('건');
   });
 });

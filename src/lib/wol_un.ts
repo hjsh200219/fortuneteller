@@ -8,7 +8,8 @@ import { getHeavenlyStemByIndex } from '../data/heavenly_stems.js';
 import { getEarthlyBranchByIndex } from '../data/earthly_branches.js';
 import { analyzeElementInteraction } from '../data/wuxing.js';
 import { SOLAR_TERMS } from '../data/solar_terms.js';
-import { getSolarMonthGanJi } from './helpers.js';
+import { getSolarMonthGanJi, getDayPillar } from './helpers.js';
+import { evaluateGanJi, describeLuck, getFavorSets, type GanJiLuck } from './luck_evaluation.js';
 
 /**
  * 월운(月運) 한 달 정보
@@ -83,32 +84,25 @@ export function analyzeWolUn(
   const yongSinElement = sajuData.yongSin?.primaryYongSin || sajuData.day.stemElement;
   const yongSinInteraction = analyzeElementInteraction(yongSinElement, stemData.element);
 
-  // 세운과의 조화 분석
-  const yearInteraction = '세운과 조화를 이루어 안정적인 달입니다.';
+  // 세운과의 관계 — 월지가 그 해(입춘 기준) 연지와 충·합하는지
+  const yearInteraction = describeYearMonthRelation(targetYear, targetMonth, monthGanJi.branch);
 
-  // 운세 분석
-  const fortune = analyzeMonthFortune(
-    sajuData,
-    stemData.element,
-    branchData.element,
-    dayMasterInteraction,
-    yongSinInteraction
-  );
+  // 운세 분석 — 십신·용신 유불리·일지 합충
+  const favorSets = getFavorSets(sajuData);
+  const luck = evaluateGanJi(sajuData, monthGanJi.stem, monthGanJi.branch, favorSets);
+  const described = describeLuck(luck, sajuData, '달');
+  const fortune: WolUnMonth['fortune'] = {
+    overall: described.overall,
+    work: described.career,
+    money: described.wealth,
+    health: described.health,
+    love: described.relationship,
+  };
 
-  // 조언 생성
-  const advice = generateMonthAdvice(
-    sajuData,
-    stemData.element,
-    yongSinInteraction,
-    targetMonth
-  );
+  const advice = generateMonthAdvice(luck);
 
-  // 길일/주의일 계산 (간단 버전)
-  const { luckyDays, cautionDays } = calculateLuckyCautionDays(
-    sajuData,
-    monthGanJi.branch,
-    targetMonth
-  );
+  // 길일/주의일 — 그 달 실제 일진을 평가
+  const { luckyDays, cautionDays } = calculateLuckyCautionDays(sajuData, targetYear, targetMonth, favorSets);
 
   return {
     year: targetYear,
@@ -131,97 +125,48 @@ export function analyzeWolUn(
   };
 }
 
-/**
- * 월별 운세 분석
- */
-function analyzeMonthFortune(
-  sajuData: SajuData,
-  monthStemElement: WuXing,
-  _monthBranchElement: WuXing,
-  dayMasterInteraction: string,
-  yongSinInteraction: string
-): WolUnMonth['fortune'] {
-  const isYongSinMonth = yongSinInteraction.includes('생') || yongSinInteraction.includes('비화');
-  const isDayMasterSupported = dayMasterInteraction.includes('생');
+const BRANCHES: EarthlyBranch[] = ['자', '축', '인', '묘', '진', '사', '오', '미', '신', '유', '술', '해'];
 
-  return {
-    overall: isYongSinMonth
-      ? '이번 달은 용신이 들어와 운세가 상승합니다. 중요한 일을 추진하기 좋은 시기입니다.'
-      : '평범한 달입니다. 안정을 유지하고 새로운 시도는 신중하게 결정하세요.',
-
-    work: isDayMasterSupported
-      ? '업무에서 좋은 성과를 낼 수 있습니다. 적극적으로 임하면 인정받을 것입니다.'
-      : '업무가 다소 버거울 수 있습니다. 무리하지 말고 휴식을 취하세요.',
-
-    money: monthStemElement === '목' || monthStemElement === '금'
-      ? '금전운이 좋습니다. 투자 기회를 살펴보세요.'
-      : '금전 관리에 유의하세요. 불필요한 지출을 줄이세요.',
-
-    health: _monthBranchElement === sajuData.day.branchElement
-      ? '건강에 주의가 필요합니다. 과로를 피하고 충분히 쉬세요.'
-      : '건강 상태가 양호합니다. 규칙적인 생활을 유지하세요.',
-
-    love: isYongSinMonth
-      ? '연애운이 좋습니다. 새로운 만남이나 관계 발전의 기회가 있습니다.'
-      : '연애에서 조금 소극적일 수 있습니다. 여유를 가지고 기다리세요.',
-  };
+function describeYearMonthRelation(year: number, month: number, monthBranch: EarthlyBranch): string {
+  const sajuYear = month === 1 ? year - 1 : year;
+  const yearBranch = BRANCHES[(((sajuYear - 4) % 12) + 12) % 12]!;
+  const yi = BRANCHES.indexOf(yearBranch);
+  const mi = BRANCHES.indexOf(monthBranch);
+  if ((yi + 6) % 12 === mi) return `월지 ${monthBranch}이(가) 세운 연지 ${yearBranch}와 충(沖)합니다. 그 해 흐름과 부딪히는 달입니다.`;
+  if ((yi + mi) % 12 === 1) return `월지 ${monthBranch}이(가) 세운 연지 ${yearBranch}와 육합합니다. 그 해 흐름을 거드는 달입니다.`;
+  return `월지 ${monthBranch}와 세운 연지 ${yearBranch} 사이에 충·합은 없습니다.`;
 }
 
-/**
- * 월별 조언 생성
- */
-function generateMonthAdvice(
-  _sajuData: SajuData,
-  _monthStemElement: WuXing,
-  yongSinInteraction: string,
-  month: number
-): string[] {
+function generateMonthAdvice(luck: GanJiLuck): string[] {
   const advice: string[] = [];
-
-  if (yongSinInteraction.includes('생')) {
-    advice.push('용신이 들어오는 좋은 달입니다. 적극적으로 행동하세요.');
-    advice.push('중요한 결정이나 계약을 추진하기 좋은 시기입니다.');
-  } else if (yongSinInteraction.includes('극')) {
-    advice.push('조심스럽게 행동하세요. 충동적인 결정은 피하세요.');
-    advice.push('현상 유지에 집중하고 새로운 도전은 다음 달로 미루세요.');
-  }
-
-  // 계절별 조언
-  if ([3, 4, 5].includes(month)) {
-    advice.push('봄철입니다. 새로운 시작에 좋은 시기이니 계획을 실행에 옮기세요.');
-  } else if ([6, 7, 8].includes(month)) {
-    advice.push('여름철입니다. 활동적으로 움직이되 건강 관리에 유의하세요.');
-  } else if ([9, 10, 11].includes(month)) {
-    advice.push('가을철입니다. 수확의 계절이니 그동안의 노력이 결실을 맺을 것입니다.');
-  } else {
-    advice.push('겨울철입니다. 내실을 다지고 다음을 준비하는 시기입니다.');
-  }
-
+  if (luck.verdict === 'favorable') advice.push('용신 쪽 달입니다. 미뤄 둔 일을 이때 추진하세요.');
+  else if (luck.verdict === 'unfavorable') advice.push('기신 쪽 달입니다. 새 일을 벌이기보다 하던 일을 정리하세요.');
+  else if (luck.verdict === 'mixed') advice.push('유불리가 엇갈리는 달입니다. 시작은 하되 한도와 퇴로를 먼저 정하세요.');
+  else advice.push('뚜렷한 유불리 신호가 없는 달입니다. 평소 계획대로 가세요.');
+  if (luck.clashWithDayBranch) advice.push('월지가 일지를 충합니다. 이사·큰 일정 변경은 한 번 더 따져 보세요.');
+  if (luck.harmonyWithDayBranch) advice.push('월지가 일지와 육합합니다. 가까운 사람과의 약속·화해에 좋습니다.');
   return advice;
 }
 
 /**
- * 길일/주의일 계산
+ * 길일/주의일 — 그 달 양력 1일~말일의 일진(日辰)을 원국 기준으로 평가
+ * 길일: 용신 쪽이고 일지를 충하지 않는 날. 주의일: 일지를 충하거나 기신 쪽인 날.
  */
 function calculateLuckyCautionDays(
-  _sajuData: SajuData,
-  _monthBranch: EarthlyBranch,
-  _month: number
+  sajuData: SajuData,
+  year: number,
+  month: number,
+  favorSets: ReturnType<typeof getFavorSets>
 ): { luckyDays: number[]; cautionDays: number[] } {
-  // 간단한 계산 (실제로는 일간지를 모두 계산해야 함)
   const luckyDays: number[] = [];
   const cautionDays: number[] = [];
-
-  // 길일: 5일마다
-  for (let day = 5; day <= 30; day += 5) {
-    luckyDays.push(day);
+  const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  for (let day = 1; day <= lastDay; day++) {
+    const { stem, branch } = getDayPillar(new Date(year, month - 1, day, 12));
+    const luck = evaluateGanJi(sajuData, stem, branch, favorSets);
+    if (luck.clashWithDayBranch || luck.verdict === 'unfavorable') cautionDays.push(day);
+    else if (luck.verdict === 'favorable') luckyDays.push(day);
   }
-
-  // 주의일: 7의 배수
-  for (let day = 7; day <= 28; day += 7) {
-    cautionDays.push(day);
-  }
-
   return { luckyDays, cautionDays };
 }
 

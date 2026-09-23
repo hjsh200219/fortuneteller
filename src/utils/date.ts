@@ -40,7 +40,8 @@ export function getAdjustedBirthInstantForSaju(
 ): Date {
   const wall = parseBirthDateTimeKorea(solarDate, birthTime);
   const offsetMin = getLongitudeOffsetMinutesForSaju(birthCity);
-  return addMinutes(wall, offsetMin);
+  // 분 단위 소수 보정값 — addMinutes 는 정수만 받으므로 밀리초로 더한다
+  return new Date(wall.getTime() + offsetMin * 60 * 1000);
 }
 
 /**

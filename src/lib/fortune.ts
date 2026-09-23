@@ -6,6 +6,15 @@ import type { SajuData, FortuneAnalysis, FortuneAnalysisType, DailyFortune, WuXi
 import { WUXING_DATA, analyzeWuXingBalance } from '../data/wuxing.js';
 import { interpretAllTenGods } from './ten_gods.js';
 import { interpretBySinSal } from './sin_sal.js';
+import { getControllingElement, getControlledElement, getGeneratedElement } from '../data/wuxing.js';
+import { getDayPillar } from './helpers.js';
+import { evaluateGanJi, describeLuck, getFavorSets } from './luck_evaluation.js';
+
+/** 오행이 용신·희신 쪽이면 +1, 기신·구신 쪽이면 -1 */
+function elementFavor(sajuData: SajuData, element: WuXing): number {
+  const sets = getFavorSets(sajuData);
+  return sets.favorable.includes(element) ? 1 : sets.unfavorable.includes(element) ? -1 : 0;
+}
 
 /**
  * 사주를 기반으로 운세 분석
@@ -288,11 +297,17 @@ function analyzeCareerFortune(
     }
   }
 
-  const score = 70 + (balance.balanced ? 20 : 0) + Math.random() * 10;
+  // 직업 십신: 관성(일간을 극하는 오행)·식상(일간이 생하는 오행)이 용신 쪽인지
+  const dayEl = sajuData.day.stemElement;
+  const score =
+    55 +
+    elementFavor(sajuData, getControllingElement(dayEl)) * 15 +
+    elementFavor(sajuData, getGeneratedElement(dayEl)) * 10 +
+    (balance.balanced ? 10 : 0);
 
   return {
     type: 'career',
-    score: Math.floor(score),
+    score: Math.max(20, Math.min(95, Math.round(score))),
     summary: '당신의 사주는 직업 선택에 있어 중요한 힌트를 제공합니다',
     details: {
       positive: positiveParts.length > 0 ? [positiveParts.join(' ')] : [],
@@ -612,11 +627,17 @@ function analyzeLoveFortune(
     }
   }
 
-  const score = 70 + Math.random() * 20;
+  // 배우자성: 남자는 재성(일간이 극하는 오행), 여자는 관성(일간을 극하는 오행)
+  const spouseEl =
+    sajuData.gender === 'male'
+      ? getControlledElement(sajuData.day.stemElement)
+      : getControllingElement(sajuData.day.stemElement);
+  const spouseCount = sajuData.wuxingCount[spouseEl] ?? 0;
+  const score = 55 + elementFavor(sajuData, spouseEl) * 15 + (spouseCount === 0 ? -10 : spouseCount >= 4 ? -5 : 5);
 
   return {
     type: 'love',
-    score: Math.floor(score),
+    score: Math.max(20, Math.min(95, Math.round(score))),
     summary: '당신만의 독특한 애정 스타일이 있습니다',
     details: {
       positive: positiveParts.length > 0 ? [positiveParts.join(' ')] : [],
@@ -627,61 +648,35 @@ function analyzeLoveFortune(
 }
 
 /**
- * 날짜 기반 시드 생성 함수
- */
-function generateDateSeed(date: Date, sajuData: SajuData): number {
-  const dateStr = date.toISOString().split('T')[0] || '';
-  const sajuStr = `${sajuData.day.stem}${sajuData.day.branch}`;
-  const combinedStr = dateStr + sajuStr;
-
-  // 문자열을 숫자 시드로 변환
-  let seed = 0;
-  for (let i = 0; i < combinedStr.length; i++) {
-    const char = combinedStr[i];
-    if (char) {
-      seed = (seed * 31 + char.charCodeAt(0)) % 100000;
-    }
-  }
-  return seed;
-}
-
-/**
- * 시드 기반 난수 생성 (0-1 사이 값)
- */
-function seededRandom(seed: number): number {
-  const x = Math.sin(seed) * 10000;
-  return x - Math.floor(x);
-}
-
-/**
- * 일일 운세 생성
+ * 일일 운세 — 그날 일진(日辰)을 원국 일간·용신·일지로 평가
  */
 export function getDailyFortune(sajuData: SajuData, date: string): DailyFortune {
-  const targetDate = new Date(date);
-  const seed = generateDateSeed(targetDate, sajuData);
-  const dayElement = sajuData.day.stemElement;
+  const [y, m, d] = date.split('-').map((v) => parseInt(v, 10));
+  const { stem, branch } = getDayPillar(new Date(y!, m! - 1, d!, 12));
+  const luck = evaluateGanJi(sajuData, stem, branch);
+  const text = describeLuck(luck, sajuData, '날');
 
-  // 날짜 기반 운세 변동
-  const dateNumber = targetDate.getDate();
-  const monthNumber = targetDate.getMonth() + 1;
+  // 분야별 점수: 기본은 일진 점수, 해당 십신이 들어온 분야만 그 유불리로 가감
+  const groups = [luck.stemTenGod, luck.branchTenGod];
+  const has = (...gods: string[]) => groups.some((g) => gods.includes(g));
+  const clamp = (v: number) => Math.round(Math.min(95, Math.max(10, v)));
+  const favorOfGroup = (...gods: string[]) =>
+    (gods.includes(luck.stemTenGod) ? luck.stemFavor : 0) + (gods.includes(luck.branchTenGod) ? luck.branchFavor : 0);
+  const spouse = sajuData.gender === 'male' ? ['정재', '편재'] : ['정관', '편관'];
 
-  const variance = ((dateNumber + monthNumber) % 20) - 10; // -10 ~ +10
-
-  // 시드 기반 변동 (-10 ~ +10)
-  const getVariance = (offset: number) => {
-    return (seededRandom(seed + offset) - 0.5) * 20;
-  };
-
+  const favorable = getFavorSets(sajuData).favorable[0] ?? sajuData.day.stemElement;
   return {
     date,
-    overallLuck: Math.round(Math.min(100, Math.max(30, 70 + variance))),
-    wealthLuck: Math.round(Math.min(100, Math.max(30, 65 + variance + getVariance(1)))),
-    careerLuck: Math.round(Math.min(100, Math.max(30, 75 + variance + getVariance(2)))),
-    healthLuck: Math.round(Math.min(100, Math.max(30, 70 + variance + getVariance(3)))),
-    loveLuck: Math.round(Math.min(100, Math.max(30, 68 + variance + getVariance(4)))),
-    luckyColor: WUXING_DATA[dayElement].color[0]!,
-    luckyDirection: WUXING_DATA[dayElement].direction,
-    advice: `오늘은 ${dayElement} 기운이 강한 날입니다. ${WUXING_DATA[dayElement].personality[0]}하게 행동하세요.`,
+    overallLuck: clamp(luck.score),
+    wealthLuck: clamp(luck.score + (has('정재', '편재') ? favorOfGroup('정재', '편재') * 10 : 0) - (has('비견', '겁재') ? 5 : 0)),
+    careerLuck: clamp(luck.score + (has('정관', '편관', '식신', '상관') ? favorOfGroup('정관', '편관', '식신', '상관') * 10 : 0)),
+    healthLuck: clamp(luck.score - (luck.clashWithDayBranch ? 15 : 0)),
+    loveLuck: clamp(
+      luck.score + (luck.harmonyWithDayBranch ? 10 : 0) - (luck.clashWithDayBranch ? 10 : 0) + (has(...spouse) ? 5 : 0)
+    ),
+    luckyColor: WUXING_DATA[favorable].color[0]!,
+    luckyDirection: WUXING_DATA[favorable].direction,
+    advice: `오늘 일진은 ${stem}${branch}입니다. ${text.overall}`,
   };
 }
 

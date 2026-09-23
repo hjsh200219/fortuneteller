@@ -382,11 +382,11 @@ function evaluateFortune(
 
   score = Math.min(100, Math.max(0, score));
 
-  // 세부 점수
-  const career = Math.min(100, score + (Math.random() * 10 - 5));
-  const wealth = Math.min(100, score + (Math.random() * 10 - 5));
-  const health = Math.min(100, score + (Math.random() * 10 - 5));
-  const relationship = Math.min(100, score + (Math.random() * 10 - 5));
+  // 세부 점수 — 분야별 근거가 없는 난수 변동은 두지 않는다(같은 입력 = 같은 출력)
+  const career = score;
+  const wealth = score;
+  const health = score;
+  const relationship = score;
 
   const overall: '대길' | '길' | '평' | '흉' | '대흉' =
     score >= 80 ? '대길'

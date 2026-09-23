@@ -58,3 +58,6 @@ coverage/
 _workspace/
 # 로컬 CLI 번들
 dist-cli/
+
+# 천체력(생성 스크립트 입력, 대용량)
+*.bsp

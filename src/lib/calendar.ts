@@ -60,16 +60,15 @@ export function convertCalendar(
 
   // 음력 → 양력
   if (fromCalendar === 'lunar' && toCalendar === 'solar') {
-    const result = lunarToSolarLocal(
-      inputDate.getFullYear(),
-      inputDate.getMonth() + 1,
-      inputDate.getDate(),
-      isLeapMonth
-    );
+    // 음력 날짜는 JS Date 로 만들지 않는다 — 2월 30일 같은 음력 날이 양력 3월 1일로 넘어가 버린다
+    const result = lunarToSolarLocal(parts[0], parts[1], parts[2], isLeapMonth);
 
     if (!result) {
+      const y = parts[0];
       throw new Error(
-        `지원하지 않는 연도입니다: ${inputDate.getFullYear()} (1900-2200만 지원)`
+        y < 1900 || y > 2200
+          ? `지원하지 않는 연도입니다: ${y} (1900-2200만 지원)`
+          : `없는 음력 날짜입니다: ${date}${isLeapMonth ? ' (윤달)' : ''} — 그해 윤달 여부와 그달 일수(29·30일)를 확인하세요`
       );
     }
 

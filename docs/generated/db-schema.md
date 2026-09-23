@@ -49,35 +49,32 @@ interface WuXingData {
 }
 ```
 
-### 절기 (solar_terms_*.ts)
+### 절기 (solar_terms_1900_2200.ts)
 
 ```typescript
-// 24절기 데이터 (1900-2200, 4개 파일로 분할)
-// solar_terms_1900_2019.ts, solar_terms.ts (2020-2030)
-// solar_terms_2031_2100.ts, solar_terms_2101_2200.ts
-// + solar_terms_complete.ts (통합 조회)
-type SolarTermEntry = {
+// 24절기 (1899 대설·동지·소한 + 1900-2200) — scripts/generate_solar_terms_skyfield.py 로 생성(JPL DE440)
+// 연도 규약: year=Y 는 Y년 1월 대한 ~ Y+1년 1월 소한. 조회는 solar_terms.ts 의 getSolarTermsForYear.
+interface SolarTermComplete {
   year: number;
-  month: number;
-  day: number;
-  hour?: number;
-  minute?: number;
-  term: SolarTerm;           // 24절기 중 하나
-};
+  term: SolarTerm;
+  datetime: string;          // ISO 8601 (KST)
+  timestamp: number;         // Unix ms
+  solarLongitude: number;    // 태양 황경(도)
+}
 ```
 
-### 음력 (lunar_table_*.ts)
+### 음력 (lunar_table_1900_2200.ts)
 
 ```typescript
-// 음력 데이터 (1900-2200, 4개 파일로 분할)
-// lunar_table_1900_2019.ts, lunar_table.ts (2020-2030)
-// lunar_table_2031_2100.ts, lunar_table_2101_2200.ts
-// + lunar_table_extended.ts (통합)
-type LunarEntry = {
+// 한국 음력 (1900-2200) — scripts/generate_lunar_table_skyfield.py 로 생성(JPL DE440 합삭·중기)
+// 1900-2049 는 KASI 공표 음력과 전부 일치. 조회·변환은 lunar_table.ts.
+interface LunarYearData {
   year: number;
-  months: number[];          // 각 월의 일수
-  leapMonth: number;         // 윤달 (0이면 없음)
-};
+  leapMonth: number;         // 0 = 없음, N = N월 뒤에 윤N월
+  monthDays: number[];       // 윤달 포함 순서대로 달 일수
+  totalDays: number;
+  solarNewYear: string;      // 음력 1월 1일의 양력 날짜
+}
 ```
 
 ### 경도 (longitude_table.ts)

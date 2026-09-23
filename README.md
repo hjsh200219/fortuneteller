@@ -261,8 +261,9 @@ fortuneteller/
 │   │   ├── earthly_branches.ts    # 지지(地支) 12개, 지장간 세력
 │   │   ├── wuxing.ts              # 오행(五行) 상생상극
 │   │   ├── solar_terms.ts         # 24절기 진입점
-│   │   ├── solar_terms_complete.ts # 24절기 통합 (1900-2200)
-│   │   ├── lunar_table.ts         # 음력 테이블 진입점
+│   │   ├── solar_terms_1900_2200.ts # 24절기 (JPL DE440 생성)
+│   │   ├── lunar_table.ts         # 음력 변환 진입점
+│   │   ├── lunar_table_1900_2200.ts # 한국 음력 (JPL DE440 생성, KASI 일치)
 │   │   ├── manselyeok_table.ts    # 만세력 기준 테이블
 │   │   └── longitude_table.ts     # 전국 162개 시군구 경도
 │   ├── schemas/              # Zod 스키마 정의

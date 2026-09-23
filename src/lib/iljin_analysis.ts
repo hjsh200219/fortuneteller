@@ -19,6 +19,7 @@ import {
   TIME_RANGES,
 } from './constants.js';
 import { getDayPillar } from './helpers.js';
+import { getPreviousSolarTermByInstant, getSolarTermMonthIndex } from '../data/solar_terms.js';
 
 /**
  * 일진 분석 결과
@@ -197,9 +198,11 @@ function calculateTwelveGods(
   date: Date,
   dayBranch: EarthlyBranch
 ): IljinAnalysis['twelveGods'] {
-  // 월지 기준으로 십이신 결정 (간단화)
-  const month = date.getMonth(); // 0-11
-  const monthBranchIndex = (month + 2) % 12; // 1월=인월
+  // 건제십이신(12직): 절기 월건(月建)의 지지와 같은 날이 건(建). 절입일은 그날 전체를 새 달로 본다
+  // (그래서 절입일에 직이 한 번 겹친다 — 만세력 관행). 그날 끝(한국 23:59) 기준 월건을 쓴다.
+  const endOfDayKst = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), 14, 59));
+  const term = getPreviousSolarTermByInstant(endOfDayKst);
+  const monthBranchIndex = term ? (getSolarTermMonthIndex(term.term) + 2) % 12 : (date.getMonth() + 11) % 12;
   const dayBranchIndex = EARTHLY_BRANCHES.indexOf(dayBranch);
 
   const godIndex = (dayBranchIndex - monthBranchIndex + 12) % 12;
@@ -242,16 +245,19 @@ function calculateConstellation(date: Date): IljinAnalysis['constellation'] {
     { name: '삼', element: '수' as WuXing, fortune: '길' },
     { name: '정', element: '목' as WuXing, fortune: '길' },
     { name: '귀', element: '금' as WuXing, fortune: '흉' },
-    { name: '유', element: '토' as WuXing, fortune: '길' },
+    { name: '류', element: '토' as WuXing, fortune: '길' },
     { name: '성', element: '화' as WuXing, fortune: '흉' },
     { name: '장', element: '목' as WuXing, fortune: '길' },
     { name: '익', element: '화' as WuXing, fortune: '길' },
     { name: '진', element: '수' as WuXing, fortune: '길' },
   ];
 
-  // 날짜로부터 28수 계산 (간단화: 28일 주기)
-  const daysSinceEpoch = Math.floor(date.getTime() / (1000 * 60 * 60 * 24));
-  const index = daysSinceEpoch % 28;
+  // 28수 값일(値日)은 요일과 맞물린 28일 주기 — 1970-01-01(목)=두(斗). 각·두·규·정은 늘 목요일.
+  // 입력 날짜의 달력 일 기준(UTC 나눗셈은 오전 시각을 전날로 센다)
+  const daysSinceEpoch = Math.round(
+    (Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) - Date.UTC(1970, 0, 1)) / 86400000
+  );
+  const index = (((daysSinceEpoch + 7) % 28) + 28) % 28;
 
   return constellations[index] || { name: '각', element: '목', fortune: '길' };
 }

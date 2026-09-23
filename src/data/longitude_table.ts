@@ -248,7 +248,8 @@ export function resolveBirthCityForSaju(birthCity?: string): string {
  */
 export function getLongitudeOffsetMinutesForSaju(birthCity?: string): number {
   const resolved = resolveBirthCityForSaju(birthCity);
-  return calculateTrueSolarTimeOffset(KOREA_CITY_LONGITUDE[resolved]!);
+  // 사주 계산은 반올림하지 않은 정확값(서울 -32.09분)을 쓴다 — 정수 반올림은 시 경계에서 1분 어긋난다
+  return (KOREA_CITY_LONGITUDE[resolved]! - KST_STANDARD_LONGITUDE) * 4;
 }
 
 /**

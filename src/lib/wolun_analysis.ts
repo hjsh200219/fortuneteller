@@ -239,10 +239,10 @@ function calculateMonthFortune(
   return {
     overall,
     score,
-    career: Math.min(100, Math.max(0, score + Math.random() * 20 - 10)),
-    wealth: Math.min(100, Math.max(0, score + Math.random() * 20 - 10)),
-    health: Math.min(100, Math.max(0, score + Math.random() * 20 - 10)),
-    relationship: Math.min(100, Math.max(0, score + Math.random() * 20 - 10)),
+    career: score,
+    wealth: score,
+    health: score,
+    relationship: score,
   };
 }
 
