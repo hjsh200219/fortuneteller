@@ -13,6 +13,9 @@ import { analyzeWolun } from '../src/lib/wolun_analysis.js';
 import { getDayPillar } from '../src/lib/helpers.js';
 import { convertCalendar } from '../src/lib/calendar.js';
 import { analyzeIljin } from '../src/lib/iljin_analysis.js';
+import { selectMonthCommandStem } from '../src/lib/gyeok_guk.js';
+import { extractJiJangGan, calculateJiJangGanStrength, checkWolRyeong } from '../src/data/earthly_branches.js';
+import type { SajuData } from '../src/types/index.js';
 
 function pillars(date: string, time: string, gender: 'male' | 'female' = 'male'): string {
   const s = calculateSaju(date, time, 'solar', false, gender, '서울');
@@ -142,5 +145,38 @@ describe('일진 28수·12직', () => {
   test('12직: 월건 지지와 같은 지지의 날이 건 — 2024-01-01(갑자, 자월)은 건', () => {
     const base = calculateSaju('1986-11-20', '10:00', 'solar', false, 'male', '서울');
     expect(analyzeIljin(new Date(2024, 0, 1, 9), base).twelveGods.name).toBe('건');
+  });
+});
+
+describe('격국·강약 — 월령 기준', () => {
+  const chart = (y: string, m: string, d: string, h: string) =>
+    ({
+      year: { stem: y[0], branch: y[1] },
+      month: { stem: m[0], branch: m[1] },
+      day: { stem: d[0], branch: d[1] },
+      hour: { stem: h[0], branch: h[1] },
+    }) as unknown as SajuData;
+
+  test('월지 지장간 중 투출한 천간이 격 — 축월(기·신·계)에 신금 투출이면 무토 일간 상관격', () => {
+    expect(selectMonthCommandStem(chart('경자', '신축', '무오', '갑인'))).toBe('신');
+  });
+  test('투출이 없으면 정기 — 해월(임·갑)에 임·갑 모두 없으면 임', () => {
+    expect(selectMonthCommandStem(chart('정묘', '신해', '을유', '병자'))).toBe('임');
+  });
+  test('진·사·미·술 중기·여기 순서: 진=계(중기)·을(여기)', () => {
+    expect(extractJiJangGan('진')).toEqual(['무', '계', '을']);
+    expect(extractJiJangGan('술')).toEqual(['무', '정', '신']);
+  });
+  test('당령 지지는 정기 세력이 가장 크다 — 인월(monthIndex 0)의 인', () => {
+    expect(calculateJiJangGanStrength('인', 0).primary.strength).toBe(90);
+  });
+  test('식상·재성 월은 실령', () => {
+    expect(checkWolRyeong('갑', '오').isDeukRyeong).toBe(false); // 목 일간, 화월 = 식상
+    expect(checkWolRyeong('갑', '진').isDeukRyeong).toBe(false); // 목 일간, 토월 = 재성
+  });
+  test('일간과 같은 천간(비견)도 십신 분포에 들어간다', () => {
+    const s = calculateSaju('1985-03-20', '12:00', 'solar', false, 'male', '서울');
+    const same = [s.year.stem, s.month.stem, s.hour.stem].filter((st) => st === s.day.stem).length;
+    expect(s.tenGodsDistribution!.비견).toBeGreaterThanOrEqual(same);
   });
 });

@@ -3,108 +3,109 @@
  * 사주의 가장 중요한 분석 요소인 일간의 강약을 종합적으로 판단
  */
 
-import type { SajuData } from '../types/index.js';
+import type { SajuData, WuXing, HeavenlyStem, EarthlyBranch } from '../types/index.js';
+import { getHeavenlyStemByKorean } from '../data/heavenly_stems.js';
+import { getGeneratingElement } from '../data/wuxing.js';
+import { JIJANGGAN_STRENGTH_DETAILED } from '../data/jijanggan_strength_table.js';
+
+/** 자리별 가중치 — 월지(월령)가 가장 무겁고 일지(좌하)가 다음. 합 9.5 */
+const POSITION_WEIGHTS = {
+  yearStem: 1,
+  monthStem: 1,
+  hourStem: 1,
+  yearBranch: 1,
+  monthBranch: 3,
+  dayBranch: 1.5,
+  hourBranch: 1,
+} as const;
 
 /**
- * 일간 강약 종합 분석
- *
- * 판단 요소:
- * 1. 월령 득실 (40%) - 가장 중요
- * 2. 비겁(比劫) 개수 (25%) - 같은 오행이 일간을 돕는 정도
- * 3. 인성(印星) 개수 (20%) - 일간을 생하는 오행
- * 4. 재관식상 개수 (15%) - 일간을 설기하는 오행
+ * 일간을 돕는 기운(비겁·인성)의 가중 비율 (0-1)
+ * 천간은 자리 가중치 그대로, 지지는 자리 가중치를 지장간 일수 비율로 나눠 오행별로 더한다.
+ */
+export function calculateSupportRatio(sajuData: SajuData): {
+  ratio: number;
+  deukRyeong: boolean;
+  deukJi: boolean;
+  deukSe: boolean;
+} {
+  const dayElement = sajuData.day.stemElement;
+  const inseong = getGeneratingElement(dayElement);
+  const isSupport = (e: WuXing) => e === dayElement || e === inseong;
+
+  let support = 0;
+  let total = 0;
+  const addStem = (stem: HeavenlyStem, w: number) => {
+    total += w;
+    if (isSupport(getHeavenlyStemByKorean(stem)!.element)) support += w;
+  };
+  const branchSupport = (branch: EarthlyBranch) =>
+    JIJANGGAN_STRENGTH_DETAILED[branch].reduce(
+      (sum, p) => sum + (isSupport(getHeavenlyStemByKorean(p.stem)!.element) ? p.strength / 100 : 0),
+      0
+    );
+  const addBranch = (branch: EarthlyBranch, w: number) => {
+    total += w;
+    support += w * branchSupport(branch);
+  };
+
+  addStem(sajuData.year.stem, POSITION_WEIGHTS.yearStem);
+  addStem(sajuData.month.stem, POSITION_WEIGHTS.monthStem);
+  addStem(sajuData.hour.stem, POSITION_WEIGHTS.hourStem);
+  addBranch(sajuData.year.branch, POSITION_WEIGHTS.yearBranch);
+  addBranch(sajuData.month.branch, POSITION_WEIGHTS.monthBranch);
+  addBranch(sajuData.day.branch, POSITION_WEIGHTS.dayBranch);
+  addBranch(sajuData.hour.branch, POSITION_WEIGHTS.hourBranch);
+
+  // 득령·득지: 월지·일지 정기가 비겁·인성. 득세: 월지·일지를 뺀 나머지 다섯 자리에서 돕는 쪽이 절반 이상
+  const mainIsSupport = (b: EarthlyBranch) => isSupport(getHeavenlyStemByKorean(JIJANGGAN_STRENGTH_DETAILED[b].at(-1)!.stem)!.element);
+  const restSupport =
+    [sajuData.year.stem, sajuData.month.stem, sajuData.hour.stem].filter((st) => isSupport(getHeavenlyStemByKorean(st)!.element)).length +
+    branchSupport(sajuData.year.branch) +
+    branchSupport(sajuData.hour.branch);
+
+  return {
+    ratio: support / total,
+    deukRyeong: mainIsSupport(sajuData.month.branch),
+    deukJi: mainIsSupport(sajuData.day.branch),
+    deukSe: restSupport >= 2.5,
+  };
+}
+
+/**
+ * 등급 경계(돕는 기운 %) — 1901-2099 무작위 출생 20,000건 분포의 15·40·60·85 백분위.
+ * 평균 40%(다섯 오행 중 비겁·인성 둘 = 2/5)를 중심으로 신강·신약이 대칭, 중화는 약 20%.
+ * very_weak ≤22 < weak ≤35 < medium < 44 ≤ strong < 58 ≤ very_strong
+ */
+export const STRENGTH_THRESHOLDS = { veryWeak: 22, weak: 35, strong: 44, veryStrong: 58 } as const;
+
+/**
+ * 일간 강약 종합 분석 — 돕는 기운(비겁·인성)의 자리·지장간 가중 비율
  */
 export function analyzeDayMasterStrength(sajuData: SajuData): {
   level: 'very_strong' | 'strong' | 'medium' | 'weak' | 'very_weak';
-  score: number; // 0-100
+  score: number; // 0-100 = 돕는 기운 비율(%)
   analysis: string;
 } {
-  let score = 50; // 기본 점수
-  const reasons: string[] = [];
+  const { ratio, deukRyeong, deukJi, deukSe } = calculateSupportRatio(sajuData);
+  const score = Math.round(ratio * 100);
 
-  // 1. 월령 득실 (40점 만점)
-  if (sajuData.wolRyeong) {
-    // strong=월지가 비겁(왕), medium=월지가 인성(생) — 둘 다 득령. weak=식상·재성·관성월 — 실령.
-    if (sajuData.wolRyeong.strength === 'strong') {
-      score += 40;
-      reasons.push('월령(비겁)을 얻어 매우 강함');
-    } else if (sajuData.wolRyeong.strength === 'medium') {
-      score += 20;
-      reasons.push('월령(인성)의 생을 받음');
-    } else {
-      score -= 20;
-      reasons.push('월령을 잃어 약함');
-    }
-  }
-
-  // 2. 비겁(比劫) 개수 (25점 만점)
-  if (sajuData.tenGodsDistribution) {
-    const bijeopCount = sajuData.tenGodsDistribution.비견 + sajuData.tenGodsDistribution.겁재;
-    if (bijeopCount >= 4) {
-      score += 25;
-      reasons.push('비겁이 많아 강함');
-    } else if (bijeopCount >= 2) {
-      score += 15;
-      reasons.push('비겁이 적절함');
-    } else if (bijeopCount === 1) {
-      score += 5;
-      reasons.push('비겁이 약간 부족');
-    } else {
-      score -= 10;
-      reasons.push('비겁이 없어 외로움');
-    }
-
-    // 3. 인성(印星) 개수 (20점 만점)
-    const inseongCount = sajuData.tenGodsDistribution.정인 + sajuData.tenGodsDistribution.편인;
-    if (inseongCount >= 3) {
-      score += 20;
-      reasons.push('인성이 많아 생을 받음');
-    } else if (inseongCount >= 2) {
-      score += 15;
-      reasons.push('인성이 적절히 있음');
-    } else if (inseongCount === 1) {
-      score += 5;
-      reasons.push('인성이 약간 있음');
-    }
-
-    // 4. 재관식상 개수 (설기 요소)
-    const seolgiCount =
-      sajuData.tenGodsDistribution.정재 +
-      sajuData.tenGodsDistribution.편재 +
-      sajuData.tenGodsDistribution.정관 +
-      sajuData.tenGodsDistribution.편관 +
-      sajuData.tenGodsDistribution.식신 +
-      sajuData.tenGodsDistribution.상관;
-
-    if (seolgiCount >= 6) {
-      score -= 15;
-      reasons.push('재관식상이 과다하여 설기됨');
-    } else if (seolgiCount >= 4) {
-      score -= 5;
-      reasons.push('재관식상이 많음');
-    }
-  }
-
-  // 점수를 0-100 범위로 제한
-  score = Math.max(0, Math.min(100, score));
-
-  // 레벨 결정
   let level: 'very_strong' | 'strong' | 'medium' | 'weak' | 'very_weak';
-  if (score >= 80) {
-    level = 'very_strong';
-  } else if (score >= 65) {
-    level = 'strong';
-  } else if (score >= 40) {
-    level = 'medium';
-  } else if (score >= 25) {
-    level = 'weak';
-  } else {
-    level = 'very_weak';
-  }
+  if (score >= STRENGTH_THRESHOLDS.veryStrong) level = 'very_strong';
+  else if (score >= STRENGTH_THRESHOLDS.strong) level = 'strong';
+  else if (score > STRENGTH_THRESHOLDS.weak) level = 'medium';
+  else if (score > STRENGTH_THRESHOLDS.veryWeak) level = 'weak';
+  else level = 'very_weak';
 
-  const analysis = reasons.join('. ') + '.';
+  const reasons = [
+    deukRyeong ? '득령(월지가 일간을 돕는 기운)' : '실령(월지가 일간을 설·극하는 기운)',
+    deukJi ? '득지(일지가 돕는 기운)' : '실지',
+    deukSe ? '득세(나머지 자리에서 돕는 기운이 많음)' : '실세',
+    `돕는 기운 비율 ${score}%`,
+  ];
+  if (sajuData.wolRyeong?.reason) reasons.push(sajuData.wolRyeong.reason);
 
-  return { level, score, analysis };
+  return { level, score, analysis: reasons.join('. ') + '.' };
 }
 
 /**

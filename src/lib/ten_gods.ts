@@ -6,6 +6,7 @@
 import type { HeavenlyStem, TenGod, SajuData, TenGodInterpretation } from '../types/index.js';
 import { getHeavenlyStemByKorean } from '../data/heavenly_stems.js';
 import { WUXING_GENERATION, WUXING_DESTRUCTION } from '../data/wuxing.js';
+import { JIJANGGAN_STRENGTH_DETAILED } from '../data/jijanggan_strength_table.js';
 
 /**
  * 십성 데이터 (이름, 한자, 의미)
@@ -156,85 +157,19 @@ export function calculateTenGodsDistribution(sajuData: SajuData): Record<TenGod,
 
   const dayStem = sajuData.day.stem;
 
-  // 연주, 월주, 시주의 천간 (일주 제외)
-  const stems = [sajuData.year.stem, sajuData.month.stem, sajuData.hour.stem];
+  // 연·월·시 천간 — 일간과 같은 천간도 비견으로 센다
+  [sajuData.year.stem, sajuData.month.stem, sajuData.hour.stem].forEach((stem) => {
+    distribution[calculateTenGod(dayStem, stem)] += 1;
+  });
 
-  stems.forEach((stem) => {
-    if (stem !== dayStem) {
-      // 일간과 다른 천간만 계산
-      const tenGod = calculateTenGod(dayStem, stem);
-      distribution[tenGod]++;
+  // 네 지지 — 지장간 일수 비율(지지마다 합 1)로 나눠 센다
+  [sajuData.year.branch, sajuData.month.branch, sajuData.day.branch, sajuData.hour.branch].forEach((branch) => {
+    for (const phase of JIJANGGAN_STRENGTH_DETAILED[branch]) {
+      distribution[calculateTenGod(dayStem, phase.stem)] += phase.strength / 100;
     }
   });
 
-  // 지장간 세력을 직접 반영
-  if (sajuData.jiJangGan) {
-    const pillars = ['year', 'month', 'day', 'hour'] as const;
-
-    pillars.forEach((pillar) => {
-      const jiJangGan = sajuData.jiJangGan?.[pillar];
-      if (!jiJangGan) return;
-
-      // 정기(正氣) - 주 지장간
-      if (jiJangGan.primary && jiJangGan.primary.stem !== dayStem) {
-        const tenGod = calculateTenGod(dayStem, jiJangGan.primary.stem);
-        // 세력을 백분율로 변환하여 가중치로 사용 (0-1 범위)
-        distribution[tenGod] += jiJangGan.primary.strength / 100;
-      }
-
-      // 중기(中氣) - 보조 지장간
-      if (jiJangGan.secondary && jiJangGan.secondary.stem !== dayStem) {
-        const tenGod = calculateTenGod(dayStem, jiJangGan.secondary.stem);
-        distribution[tenGod] += jiJangGan.secondary.strength / 100;
-      }
-
-      // 여기(餘氣) - 잔여 지장간
-      if (jiJangGan.residual && jiJangGan.residual.stem !== dayStem) {
-        const tenGod = calculateTenGod(dayStem, jiJangGan.residual.stem);
-        distribution[tenGod] += jiJangGan.residual.strength / 100;
-      }
-    });
-  } else {
-    // 지장간 정보가 없을 경우 기존 방식 (0.5 가중치)
-    const branches = [
-      sajuData.year.branch,
-      sajuData.month.branch,
-      sajuData.day.branch,
-      sajuData.hour.branch,
-    ];
-
-    branches.forEach((branch) => {
-      const branchStem = mapBranchToStem(branch);
-      if (branchStem && branchStem !== dayStem) {
-        const tenGod = calculateTenGod(dayStem, branchStem);
-        distribution[tenGod] += 0.5;
-      }
-    });
-  }
-
   return distribution;
-}
-
-/**
- * 지지를 대표 천간으로 매핑 (간단 버전)
- * TODO: 지장간 구현 시 상세화
- */
-function mapBranchToStem(branch: string): HeavenlyStem | null {
-  const mapping: Record<string, HeavenlyStem> = {
-    자: '계',
-    축: '기',
-    인: '갑',
-    묘: '을',
-    진: '무',
-    사: '병',
-    오: '정',
-    미: '기',
-    신: '경',
-    유: '신',
-    술: '무',
-    해: '임',
-  };
-  return mapping[branch] || null;
 }
 
 /**

@@ -331,13 +331,13 @@ export const JI_JANG_GAN: Record<
   축: { primary: '기', secondary: '신', residual: '계' }, // 丑: 기토, 신금, 계수
   인: { primary: '갑', secondary: '병', residual: '무' }, // 寅: 갑목, 병화, 무토
   묘: { primary: '을' }, // 卯: 을목만
-  진: { primary: '무', secondary: '을', residual: '계' }, // 辰: 무토, 을목, 계수
-  사: { primary: '병', secondary: '무', residual: '경' }, // 巳: 병화, 무토, 경금
+  진: { primary: '무', secondary: '계', residual: '을' }, // 辰: 정기 무토, 중기 계수, 여기 을목
+  사: { primary: '병', secondary: '경', residual: '무' }, // 巳: 정기 병화, 중기 경금, 여기 무토
   오: { primary: '정', secondary: '기' }, // 午: 정화, 기토
-  미: { primary: '기', secondary: '정', residual: '을' }, // 未: 기토, 정화, 을목
+  미: { primary: '기', secondary: '을', residual: '정' }, // 未: 정기 기토, 중기 을목, 여기 정화
   신: { primary: '경', secondary: '임', residual: '무' }, // 申: 경금, 임수, 무토
   유: { primary: '신' }, // 酉: 신금만
-  술: { primary: '무', secondary: '신', residual: '정' }, // 戌: 무토, 신금, 정화
+  술: { primary: '무', secondary: '정', residual: '신' }, // 戌: 정기 무토, 중기 정화, 여기 신금
   해: { primary: '임', secondary: '갑' }, // 亥: 임수, 갑목
 };
 
@@ -367,8 +367,10 @@ export function calculateJiJangGanStrength(
   const jiJang = JI_JANG_GAN[branch];
 
   // 지지와 월령의 관계로 세력 결정
+  // monthIndex 는 인월=0 기준, 지지 배열은 자=0 기준 — 같은 기준(인=0)으로 맞춘다
   const branchIndex = EARTHLY_BRANCHES.findIndex((b) => b.korean === branch);
-  const monthDiff = (monthIndex - branchIndex + 12) % 12;
+  const branchMonthIndex = (branchIndex - 2 + 12) % 12;
+  const monthDiff = (monthIndex - branchMonthIndex + 12) % 12;
 
   let primaryStrength = 70; // 기본 정기 세력
   let secondaryStrength = 20; // 기본 중기 세력
