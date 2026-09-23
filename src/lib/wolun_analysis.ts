@@ -10,7 +10,7 @@ import type {
   SajuData,
   WuXing
 } from '../types/index.js';
-import { getHeavenlyStemFromYear } from './helpers.js';
+import { getSolarMonthGanJi } from './helpers.js';
 
 /**
  * 월운 분석 결과
@@ -70,9 +70,7 @@ export function analyzeWolun(
   month: number
 ): WolunAnalysis {
   // 1. 월간지 구하기
-  const yearStem = getHeavenlyStemFromYear(year);
-  const monthStem = getMonthStem(year, month, yearStem);
-  const monthBranch = getMonthBranch(month);
+  const { stem: monthStem, branch: monthBranch } = getSolarMonthGanJi(year, month);
   const monthPillar = `${monthStem}${monthBranch}`;
 
   // 2. 오행 분석
@@ -129,57 +127,6 @@ export function analyzeYearlyWolun(
   }
 
   return results;
-}
-
-/**
- * 월간 구하기 (년간 기준 월간 계산)
- */
-function getMonthStem(
-  _year: number,
-  month: number,
-  yearStem: HeavenlyStem
-): HeavenlyStem {
-  // 월간 계산 공식
-  const stems: HeavenlyStem[] = ['갑', '을', '병', '정', '무', '기', '경', '신', '임', '계'];
-
-  // 년간에 따른 월간 시작 (갑기년은 병인월부터)
-  const monthStartMap: Record<HeavenlyStem, number> = {
-    '갑': 2, '기': 2, // 갑기년 - 병인월
-    '을': 4, '경': 4, // 을경년 - 무인월
-    '병': 6, '신': 6, // 병신년 - 경인월
-    '정': 8, '임': 8, // 정임년 - 임인월
-    '무': 0, '계': 0, // 무계년 - 갑인월
-  };
-
-  const baseIndex = monthStartMap[yearStem];
-  const monthOffset = month - 1; // 1월 = 인월(0번째)
-
-  const index = (baseIndex + monthOffset) % 10;
-  return stems[index] || '갑';
-}
-
-/**
- * 월지 구하기
- */
-function getMonthBranch(month: number): EarthlyBranch {
-  // 양력 월 기준 (절입 전후로 실제로는 다를 수 있음)
-  const branches: EarthlyBranch[] = [
-    '축', // 12월 대한-1월 입춘 전
-    '인', // 1월 입춘-2월 경칩 전
-    '묘', // 2월 경칩-3월 청명 전
-    '진', // 3월 청명-4월 입하 전
-    '사', // 4월 입하-5월 망종 전
-    '오', // 5월 망종-6월 소서 전
-    '미', // 6월 소서-7월 입추 전
-    '신', // 7월 입추-8월 백로 전
-    '유', // 8월 백로-9월 한로 전
-    '술', // 9월 한로-10월 입동 전
-    '해', // 10월 입동-11월 대설 전
-    '자', // 11월 대설-12월 소한 전
-  ];
-
-  // 간단하게 양력 월 기준 (정확한 절입일 계산은 별도 필요)
-  return branches[month % 12] || '자';
 }
 
 /**

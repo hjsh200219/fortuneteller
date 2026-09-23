@@ -8,6 +8,7 @@ import { getHeavenlyStemByIndex } from '../data/heavenly_stems.js';
 import { getEarthlyBranchByIndex } from '../data/earthly_branches.js';
 import { analyzeElementInteraction } from '../data/wuxing.js';
 import { SOLAR_TERMS } from '../data/solar_terms.js';
+import { getSolarMonthGanJi } from './helpers.js';
 
 /**
  * 월운(月運) 한 달 정보
@@ -39,78 +40,16 @@ export interface WolUnMonth {
 }
 
 /**
- * 월지(月支) 배열 - 절기 기준
- * 입춘(2월) = 인월, 경칩(3월) = 묘월, ...
- */
-const MONTH_BRANCHES: EarthlyBranch[] = [
-  '인', // 입춘 (2월)
-  '묘', // 경칩 (3월)
-  '진', // 청명 (4월)
-  '사', // 입하 (5월)
-  '오', // 망종 (6월)
-  '미', // 소서 (7월)
-  '신', // 입추 (8월)
-  '유', // 백로 (9월)
-  '술', // 한로 (10월)
-  '해', // 입동 (11월)
-  '자', // 대설 (12월)
-  '축', // 소한 (1월)
-];
-
-/**
- * 월간(月干) 계산
- * 년간에 따라 정해진 규칙으로 계산
- */
-function getMonthStem(yearStem: HeavenlyStem, monthBranch: EarthlyBranch): HeavenlyStem {
-  // 년간에 따른 정월(인월) 천간 결정
-  const firstMonthStems: Record<HeavenlyStem, HeavenlyStem> = {
-    갑: '병',
-    을: '무',
-    병: '경',
-    정: '임',
-    무: '갑',
-    기: '병',
-    경: '무',
-    신: '경',
-    임: '임',
-    계: '갑',
-  };
-
-  const firstMonthStem = firstMonthStems[yearStem]!;
-  const firstMonthStemIndex = ['갑', '을', '병', '정', '무', '기', '경', '신', '임', '계'].indexOf(
-    firstMonthStem
-  );
-
-  // 인월부터 순서대로 천간 배정
-  const monthBranchIndex = MONTH_BRANCHES.indexOf(monthBranch);
-  const monthStemIndex = (firstMonthStemIndex + monthBranchIndex) % 10;
-
-  return ['갑', '을', '병', '정', '무', '기', '경', '신', '임', '계'][
-    monthStemIndex
-  ] as HeavenlyStem;
-}
-
-/**
- * 특정 년월의 간지 계산
+ * 특정 년월의 간지 계산 (양력 M월 = 그 달 절입 절의 월건, 1월은 전년도 연간)
  */
 function getMonthGanJi(
-  month: number,
-  yearStem: HeavenlyStem
+  year: number,
+  month: number
 ): { stem: HeavenlyStem; branch: EarthlyBranch; solarTerm: string } {
-  // 절기 기준으로 월지 결정
-  // 간단화: 양력 월을 기준으로 근사치 사용
-  const solarTermIndex = month - 1;
-  const monthBranch = MONTH_BRANCHES[solarTermIndex % 12]!;
-  const monthStem = getMonthStem(yearStem, monthBranch);
-
-  // 해당 월의 대표 절기
-  const solarTermName = SOLAR_TERMS[solarTermIndex * 2]!.name; // 월초 절기 이름
-
-  return {
-    stem: monthStem,
-    branch: monthBranch,
-    solarTerm: solarTermName,
-  };
+  const { stem, branch, offsetFromIn } = getSolarMonthGanJi(year, month);
+  // 월초 절(節) 이름 — SOLAR_TERMS 는 입춘부터 절·기 교대
+  const solarTermName = SOLAR_TERMS[offsetFromIn * 2]!.name;
+  return { stem, branch, solarTerm: solarTermName };
 }
 
 /**
@@ -120,9 +59,10 @@ export function analyzeWolUn(
   sajuData: SajuData,
   targetYear: number,
   targetMonth: number,
-  yearStem: HeavenlyStem
+  _yearStem?: HeavenlyStem
 ): WolUnMonth {
-  const monthGanJi = getMonthGanJi(targetMonth, yearStem);
+  // 연간은 targetYear·targetMonth 로 직접 낸다(1월은 전년도). _yearStem 은 호출부 호환용.
+  const monthGanJi = getMonthGanJi(targetYear, targetMonth);
 
   const stemData = getHeavenlyStemByIndex(
     ['갑', '을', '병', '정', '무', '기', '경', '신', '임', '계'].indexOf(monthGanJi.stem)
@@ -307,7 +247,6 @@ export function getMultipleWolUn(
     if (currentMonth > 12) {
       currentMonth = 1;
       currentYear++;
-      // 년간도 변경해야 하지만 간단화를 위해 생략
     }
   }
 

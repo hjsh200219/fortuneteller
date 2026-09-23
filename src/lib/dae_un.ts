@@ -8,7 +8,7 @@ import { getHeavenlyStemByIndex } from '../data/heavenly_stems.js';
 import { getEarthlyBranchByIndex } from '../data/earthly_branches.js';
 import { getNextJieSolarTermByInstant, getPreviousJieSolarTermByInstant } from '../data/solar_terms.js';
 import { daeUnCache, generateDaeUnCacheKey } from './performance_cache.js';
-import { getAdjustedBirthInstantForSaju } from '../utils/date.js';
+import { parseBirthDateTimeKorea } from '../utils/date.js';
 
 export interface DaeUnPeriod {
   startAge: number;
@@ -121,11 +121,8 @@ export function getDaeUnAtAge(
  */
 function calculateDaeUnStartAge(sajuData: SajuData): number {
   // 만세력 기준: 출생일시를 정확히 반영 (대한민국 벽시계·썸머타임 반영)
-  const birthDate = getAdjustedBirthInstantForSaju(
-    sajuData.birthDate,
-    sajuData.birthTime,
-    sajuData.birthCity
-  );
+  // 절입 시각과 비교하므로 경도 보정 전 실제 출생 순간을 쓴다. 음력 입력은 양력 환산일로.
+  const birthDate = parseBirthDateTimeKorea(sajuData.solarBirthDate ?? sajuData.birthDate, sajuData.birthTime);
   
   const isForward = isDaeUnForward(sajuData);
 

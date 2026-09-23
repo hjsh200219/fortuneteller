@@ -107,14 +107,14 @@ describe('getCurrentSolarTermPrecise 정밀 함수 검증', () => {
     expect(result).toBe('입춘');
   });
 
-  test('2026년 입춘(2/4 04:46) 이전에는 대한이어야 함', () => {
+  test('2026년 입춘(2/4 05:02) 이전에는 대한이어야 함', () => {
     const beforeIpchun = new Date(2026, 1, 4, 3, 0, 0); // 2/4 03:00
     const result = getCurrentSolarTermPrecise(beforeIpchun);
     expect(result).toBe('대한');
   });
 
-  test('2026년 입춘(2/4 04:46) 이후에는 입춘이어야 함', () => {
-    const afterIpchun = new Date(2026, 1, 4, 5, 0, 0); // 2/4 05:00
+  test('2026년 입춘(2/4 05:02) 이후에는 입춘이어야 함', () => {
+    const afterIpchun = new Date(2026, 1, 4, 5, 10, 0); // 2/4 05:10
     const result = getCurrentSolarTermPrecise(afterIpchun);
     expect(result).toBe('입춘');
   });

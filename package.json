@@ -15,6 +15,7 @@
   ],
   "scripts": {
     "build": "tsc",
+    "build:cli": "npx --yes esbuild src/cli.ts --bundle --platform=node --format=esm --target=node20 --outfile=dist-cli/saju.mjs",
     "dev": "tsx src/index.ts",
     "start": "node dist/index.js",
     "start:http": "node dist/server-http.js",

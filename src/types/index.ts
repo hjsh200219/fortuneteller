@@ -67,6 +67,8 @@ export interface SajuData {
   // 기본 정보
   birthDate: string; // YYYY-MM-DD
   birthTime: string; // HH:MM
+  /** 양력 환산 생년월일 (calendar=lunar 이면 변환값, solar 면 birthDate 와 같음) */
+  solarBirthDate?: string;
   /** 경도 보정에 사용한 시군구명 (longitude_table 키). 미입력 시 서울 */
   birthCity: string;
   calendar: CalendarType;

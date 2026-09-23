@@ -15,10 +15,7 @@ import { LUNAR_TABLE_2031_2100, getLunarYearData2031_2100 } from '../data/lunar_
 import { LUNAR_TABLE_2101_2200, getLunarYearData2101_2200 } from '../data/lunar_table_2101_2200.js';
 
 // 절기 데이터 import
-import { SOLAR_TERMS_1900_2019, type SolarTermComplete } from '../data/solar_terms_1900_2019.js';
-import { SOLAR_TERMS_COMPLETE } from '../data/solar_terms_complete.js';
-import { SOLAR_TERMS_2031_2100 } from '../data/solar_terms_2031_2100.js';
-import { SOLAR_TERMS_2101_2200 } from '../data/solar_terms_2101_2200.js';
+import { getSolarTermsForYear, type SolarTermComplete } from '../data/solar_terms.js';
 
 /**
  * 데이터 범위 상수
@@ -79,6 +76,19 @@ export function getUnifiedLunarYearData(year: number): LunarYearData | undefined
   return data;
 }
 
+/** 1900-2200 전체 절기(시간순, timestamp 보정 적용) — getSolarTermsForYear 단일 출처 */
+let allSolarTermsCache: SolarTermComplete[] | null = null;
+function getAllSolarTerms(): SolarTermComplete[] {
+  if (!allSolarTermsCache) {
+    const terms: SolarTermComplete[] = [];
+    for (let y = DATA_RANGE.MIN_YEAR; y <= DATA_RANGE.MAX_YEAR; y++) {
+      terms.push(...getSolarTermsForYear(y));
+    }
+    allSolarTermsCache = terms;
+  }
+  return allSolarTermsCache;
+}
+
 /**
  * 통합 절기 데이터 조회
  *
@@ -106,18 +116,7 @@ export function getUnifiedSolarTerm(year: number, term: SolarTerm): SolarTermCom
     return cached;
   }
 
-  // 연도 범위에 따라 적절한 데이터 소스 선택
-  let data: SolarTermComplete | undefined;
-
-  if (year >= 1900 && year <= 2019) {
-    data = SOLAR_TERMS_1900_2019.find(st => st.year === year && st.term === term);
-  } else if (year >= 2020 && year <= 2030) {
-    data = SOLAR_TERMS_COMPLETE.find(st => st.year === year && st.term === term);
-  } else if (year >= 2031 && year <= 2100) {
-    data = SOLAR_TERMS_2031_2100.find(st => st.year === year && st.term === term);
-  } else if (year >= 2101 && year <= 2200) {
-    data = SOLAR_TERMS_2101_2200.find(st => st.year === year && st.term === term);
-  }
+  const data = getSolarTermsForYear(year).find(st => st.term === term);
 
   // 캐시에 저장
   if (data) {
@@ -142,18 +141,7 @@ export function getUnifiedYearSolarTerms(year: number): SolarTermComplete[] {
     );
   }
 
-  // 연도 범위에 따라 적절한 데이터 소스 선택
-  if (year >= 1900 && year <= 2019) {
-    return SOLAR_TERMS_1900_2019.filter(st => st.year === year);
-  } else if (year >= 2020 && year <= 2030) {
-    return SOLAR_TERMS_COMPLETE.filter(st => st.year === year);
-  } else if (year >= 2031 && year <= 2100) {
-    return SOLAR_TERMS_2031_2100.filter(st => st.year === year);
-  } else if (year >= 2101 && year <= 2200) {
-    return SOLAR_TERMS_2101_2200.filter(st => st.year === year);
-  }
-
-  return [];
+  return getSolarTermsForYear(year);
 }
 
 /**
@@ -177,12 +165,7 @@ export function getUnifiedCurrentSolarTerm(date: Date): SolarTermComplete | null
   let currentTerm: SolarTermComplete | null = null;
 
   // 모든 절기 데이터를 통합하여 검색
-  const allTerms = [
-    ...SOLAR_TERMS_1900_2019,
-    ...SOLAR_TERMS_COMPLETE,
-    ...SOLAR_TERMS_2031_2100,
-    ...SOLAR_TERMS_2101_2200,
-  ];
+  const allTerms = getAllSolarTerms();
 
   // 정렬된 순서로 검색 (timestamp 기준)
   for (const term of allTerms) {
@@ -216,12 +199,7 @@ export function getUnifiedNextSolarTerm(date: Date): SolarTermComplete | null {
   const timestamp = date.getTime();
 
   // 모든 절기 데이터를 통합하여 검색
-  const allTerms = [
-    ...SOLAR_TERMS_1900_2019,
-    ...SOLAR_TERMS_COMPLETE,
-    ...SOLAR_TERMS_2031_2100,
-    ...SOLAR_TERMS_2101_2200,
-  ];
+  const allTerms = getAllSolarTerms();
 
   // 정렬된 순서로 검색
   for (const term of allTerms) {
@@ -275,12 +253,7 @@ export function getDataStatistics(): {
     ...LUNAR_TABLE_2101_2200,
   ];
 
-  const allSolarTerms = [
-    ...SOLAR_TERMS_1900_2019,
-    ...SOLAR_TERMS_COMPLETE,
-    ...SOLAR_TERMS_2031_2100,
-    ...SOLAR_TERMS_2101_2200,
-  ];
+  const allSolarTerms = getAllSolarTerms();
 
   return {
     lunarYears: allLunarData.length,

@@ -34,6 +34,30 @@ export function getEarthlyBranchFromYear(year: number): EarthlyBranch {
 }
 
 /**
+ * 양력 연·월의 월건(月建) 간지 — 그 달에 절입하는 절(節)이 다스리는 달
+ *
+ * 절(節)은 매달 4~8일에 들어오므로 양력 M월의 대부분은 M월 절이 여는 달이다:
+ * 2월=입춘(인월) … 12월=대설(자월), 1월=소한(축월). 1월 축월은 아직 입춘 전이라 전년도 연간으로 월간을 낸다.
+ * 절입일 이전 며칠은 전달 간지다 — 날짜 단위가 필요하면 calculateSaju 를 쓴다.
+ */
+export function getSolarMonthGanJi(
+  year: number,
+  month: number
+): { stem: HeavenlyStem; branch: EarthlyBranch; offsetFromIn: number } {
+  const offsetFromIn = (month + 10) % 12; // 0=인월(2월) … 10=자월(12월), 11=축월(1월)
+  const sajuYear = month === 1 ? year - 1 : year;
+  const yearStemIndex = (((sajuYear - 4) % 10) + 10) % 10;
+  // 갑기년 병인월, 을경년 무인월, 병신년 경인월, 정임년 임인월, 무계년 갑인월
+  const stemIndex = ((yearStemIndex % 5) * 2 + 2 + offsetFromIn) % 10;
+  const branchIndex = (offsetFromIn + 2) % 12;
+  return {
+    stem: getHeavenlyStemByIndex(stemIndex).korean,
+    branch: getEarthlyBranchByIndex(branchIndex).korean,
+    offsetFromIn,
+  };
+}
+
+/**
  * 날짜에서 일주(일간, 일지) 구하기
  *
  * @param date - 날짜

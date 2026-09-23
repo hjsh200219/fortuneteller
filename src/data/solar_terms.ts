@@ -3,17 +3,14 @@
  * 사주 계산에서 월주를 정하는데 중요한 기준
  *
  * 연도별 테이블:
- * - 1900-2019: solar_terms_1900_2019.ts (Jean Meeus 알고리즘)
- * - 2020-2030: solar_terms_complete.ts (Jean Meeus 알고리즘)
- * - 2031-2100: solar_terms_2031_2100.ts (Jean Meeus 알고리즘)
- * - 2101-2200: solar_terms_2101_2200.ts (Jean Meeus 알고리즘)
+ * - 1900-2149: solar_terms_1900_2149.ts (JPL DE440s, KASI 공표값과 분 단위 일치)
+ * - 2150-2200: solar_terms_2101_2200.ts (Jean Meeus 근사, 최대 약 30분 오차)
  */
 
 import { formatInTimeZone } from 'date-fns-tz';
 import type { SolarTerm } from '../types/index.js';
-import { SOLAR_TERMS_1900_2019, type SolarTermComplete } from './solar_terms_1900_2019.js';
-import { SOLAR_TERMS_COMPLETE } from './solar_terms_complete.js';
-import { SOLAR_TERMS_2031_2100 } from './solar_terms_2031_2100.js';
+import type { SolarTermComplete } from './solar_terms_1900_2019.js';
+import { SOLAR_TERMS_1900_2149 } from './solar_terms_1900_2149.js';
 import { SOLAR_TERMS_2101_2200 } from './solar_terms_2101_2200.js';
 
 export type { SolarTermComplete };
@@ -116,14 +113,9 @@ export function getSolarTermsForYear(year: number): SolarTermComplete[] {
 
   let raw: SolarTermComplete[];
 
-  // 1900-2019
-  if (year >= 1900 && year <= 2019) {
-    raw = SOLAR_TERMS_1900_2019.filter((data) => data.year === year);
-  } else if (year >= 2020 && year <= 2030) {
-    raw = SOLAR_TERMS_COMPLETE.filter((data) => data.year === year);
-  } else if (year >= 2031 && year <= 2100) {
-    raw = SOLAR_TERMS_2031_2100.filter((data) => data.year === year);
-  } else if (year >= 2101 && year <= 2200) {
+  if (year >= 1899 && year <= 2149) {
+    raw = SOLAR_TERMS_1900_2149.filter((data) => data.year === year);
+  } else if (year >= 2150 && year <= 2200) {
     raw = SOLAR_TERMS_2101_2200.filter((data) => data.year === year);
   } else {
     return [];
@@ -150,8 +142,8 @@ export const SOLAR_TERMS_JIE: SolarTerm[] = [
   '백로',
   '한로',
   '입동',
-  '소설',
   '대설',
+  '소한',
 ];
 
 const JIE_SET = new Set<SolarTerm>(SOLAR_TERMS_JIE);
@@ -166,7 +158,7 @@ function isJieTerm(term: SolarTerm): boolean {
 export function getPreviousSolarTermByInstant(date: Date): SolarTermComplete | null {
   const timestamp = date.getTime();
   const seoulYear = parseInt(formatInTimeZone(date, SEOUL_TZ, 'yyyy'), 10);
-  const minY = Math.max(1900, seoulYear - 1);
+  const minY = Math.max(1899, seoulYear - 1);
   const maxY = Math.min(2200, seoulYear + 1);
   const allTerms: SolarTermComplete[] = [];
   for (let y = minY; y <= maxY; y++) {
@@ -185,7 +177,7 @@ export function getPreviousSolarTermByInstant(date: Date): SolarTermComplete | n
 export function getNextSolarTermByInstant(date: Date): SolarTermComplete | null {
   const timestamp = date.getTime();
   const seoulYear = parseInt(formatInTimeZone(date, SEOUL_TZ, 'yyyy'), 10);
-  const minY = Math.max(1900, seoulYear - 1);
+  const minY = Math.max(1899, seoulYear - 1);
   const maxY = Math.min(2200, seoulYear + 1);
   const allTerms: SolarTermComplete[] = [];
   for (let y = minY; y <= maxY; y++) {
@@ -204,7 +196,7 @@ export function getNextSolarTermByInstant(date: Date): SolarTermComplete | null 
 export function getPreviousJieSolarTermByInstant(date: Date): SolarTermComplete | null {
   const timestamp = date.getTime();
   const seoulYear = parseInt(formatInTimeZone(date, SEOUL_TZ, 'yyyy'), 10);
-  const minY = Math.max(1900, seoulYear - 1);
+  const minY = Math.max(1899, seoulYear - 1);
   const maxY = Math.min(2200, seoulYear + 1);
   const allTerms: SolarTermComplete[] = [];
   for (let y = minY; y <= maxY; y++) {
@@ -223,7 +215,7 @@ export function getPreviousJieSolarTermByInstant(date: Date): SolarTermComplete 
 export function getNextJieSolarTermByInstant(date: Date): SolarTermComplete | null {
   const timestamp = date.getTime();
   const seoulYear = parseInt(formatInTimeZone(date, SEOUL_TZ, 'yyyy'), 10);
-  const minY = Math.max(1900, seoulYear - 1);
+  const minY = Math.max(1899, seoulYear - 1);
   const maxY = Math.min(2200, seoulYear + 1);
   const allTerms: SolarTermComplete[] = [];
   for (let y = minY; y <= maxY; y++) {

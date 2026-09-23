@@ -9,7 +9,7 @@ import { getHeavenlyStemByIndex } from '../data/heavenly_stems.js';
 import { getEarthlyBranchByIndex } from '../data/earthly_branches.js';
 import { HEAVENLY_STEMS, EARTHLY_BRANCHES } from './constants.js';
 import { getNextJieSolarTermByInstant, getPreviousJieSolarTermByInstant } from '../data/solar_terms.js';
-import { getManAgeForFortuneYear, getAdjustedBirthInstantForSaju } from '../utils/date.js';
+import { getManAgeForFortuneYear, parseBirthDateTimeKorea } from '../utils/date.js';
 
 /**
  * 대운 주기 (10년)
@@ -184,12 +184,13 @@ export function calculateDaeunList(
   const monthStem = saju.month.stem;
   const monthBranch = saju.month.branch;
 
-  // 양남음녀는 순행, 음남양녀는 역행
-  // TODO: 실제로는 연주의 음양을 확인해야 하지만, 간단히 성별로 판단
-  const isYangMale = gender === 'male';
+  // 양남음녀는 순행, 음남양녀는 역행 — 연간(年干) 음양 × 성별
+  const isYangYear = saju.year.yinYang === '양';
+  const isYangMale = (isYangYear && gender === 'male') || (!isYangYear && gender === 'female');
   const direction: '順行' | '逆行' = isYangMale ? '順行' : '逆行';
 
-  const birthDate = getAdjustedBirthInstantForSaju(saju.birthDate, saju.birthTime, saju.birthCity);
+  // 절입 시각과 비교하므로 경도 보정 전 실제 출생 순간. 음력 입력은 양력 환산일로.
+  const birthDate = parseBirthDateTimeKorea(saju.solarBirthDate ?? saju.birthDate, saju.birthTime);
 
   // 절기 데이터 기반 정밀 대운 시작 나이 계산
   const startAge = calculateDaeunStartAge(birthDate, isYangMale);

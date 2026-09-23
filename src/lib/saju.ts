@@ -7,10 +7,10 @@ import { formatInTimeZone, toDate } from 'date-fns-tz';
 import type { SajuData, Pillar, Gender, CalendarType, WuXing } from '../types/index.js';
 import { getHeavenlyStemByIndex } from '../data/heavenly_stems.js';
 import { getEarthlyBranchByIndex, analyzeBranchRelations, checkWolRyeong, calculateJiJangGanStrength } from '../data/earthly_branches.js';
-import { getCurrentSolarTerm, getSolarTermMonthIndex } from '../data/solar_terms.js';
+import { getPreviousSolarTermByInstant, getSolarTermMonthIndex } from '../data/solar_terms.js';
 import { WUXING_DATA } from '../data/wuxing.js';
 import { convertCalendar } from './calendar.js';
-import { getAdjustedBirthInstantForSaju } from '../utils/date.js';
+import { getAdjustedBirthInstantForSaju, parseBirthDateTimeKorea } from '../utils/date.js';
 import { resolveBirthCityForSaju } from '../data/longitude_table.js';
 import { calculateTenGodsDistribution, generateTenGodsList } from './ten_gods.js';
 import { findSinSals } from './sin_sal.js';
@@ -20,6 +20,18 @@ import { selectYongSin } from './yong_sin.js';
 import { sajuCache, generateSajuCacheKey } from './performance_cache.js';
 
 const SEOUL_TZ = 'Asia/Seoul';
+
+/**
+ * 경도 보정된 순간을 지방평균시(LMT) 달력값으로 읽는다.
+ * getAdjustedBirthInstantForSaju 는 동경 135°(UTC+9) 기준 보정값을 더하므로, 결과는 UTC+9 고정으로 읽어야
+ * 1954-1961(UTC+8:30)·썸머타임 구간에서도 지방평균시가 된다. Asia/Seoul 로 읽으면 그 구간에서 30~60분 틀린다.
+ * date-fns-tz formatInTimeZone 은 고정 오프셋이어도 호스트 시간대의 없는 시각(썸머타임 시작 직후)을
+ * 한 시간 밀어내므로 UTC 산술로 읽는다.
+ */
+function readLmt(date: Date): { ymd: string; hour: number } {
+  const shifted = new Date(date.getTime() + 9 * 60 * 60 * 1000);
+  return { ymd: shifted.toISOString().slice(0, 10), hour: shifted.getUTCHours() };
+}
 
 /**
  * 생년월일시로부터 사주팔자 계산 (캐싱 적용)
@@ -55,14 +67,19 @@ export function calculateSaju(
     solarDate = conversion.convertedDate;
   }
 
-  // 출생 벽시계(썸머타임) + 출생지 경도 보정(동경 135° 대비)
+  // 실제 출생 순간(썸머타임·표준시 이력 반영) — 절입 시각과 비교하는 연주·월주 기준
+  const birthInstant = parseBirthDateTimeKorea(solarDate, birthTime);
+  // 출생지 경도 보정(동경 135° 대비) — 일주·시주 기준(지방평균시)
   const adjustedDate = getAdjustedBirthInstantForSaju(solarDate, birthTime, resolvedBirthCity);
 
+  // 출생 순간 직전 절기(정밀 절기표) — 연주·월주·지장간 공통
+  const monthIndex = getSolarMonthIndexAt(birthInstant);
+
   // 연주 계산
-  const yearPillar = calculateYearPillar(adjustedDate);
+  const yearPillar = calculateYearPillar(birthInstant, monthIndex);
 
   // 월주 계산
-  const monthPillar = calculateMonthPillar(adjustedDate, yearPillar);
+  const monthPillar = calculateMonthPillar(monthIndex, yearPillar);
 
   // 일주 계산
   const dayPillar = calculateDayPillar(adjustedDate);
@@ -101,6 +118,7 @@ export function calculateSaju(
   const sajuData: SajuData = {
     birthDate,
     birthTime,
+    solarBirthDate: solarDate,
     birthCity: resolvedBirthCity,
     calendar,
     isLeapMonth,
@@ -127,8 +145,6 @@ export function calculateSaju(
   sajuData.branchRelations = analyzeBranchRelations(branches);
 
   // 지장간 세력 계산
-  const currentSolarTerm = getCurrentSolarTerm(adjustedDate);
-  const monthIndex = getSolarTermMonthIndex(currentSolarTerm);
   sajuData.jiJangGan = {
     year: calculateJiJangGanStrength(yearPillar.branch, monthIndex),
     month: calculateJiJangGanStrength(monthPillar.branch, monthIndex),
@@ -166,26 +182,28 @@ export function calculateSaju(
 }
 
 /**
- * 연주(年柱) 계산
+ * 출생 순간 직전 절기의 월 인덱스 (0=인월 … 10=자월, 11=축월)
  */
-function calculateYearPillar(date: Date): Pillar {
-  const year = date.getFullYear();
-
-  // 입춘 이전이면 전년도로 계산
-  const solarTerm = getCurrentSolarTerm(date);
-  const month = date.getMonth() + 1;
-  let sajuYear = year;
-
-  // 1월이나 2월 초에 입춘 이전이면 전년도
-  // 입춘 이전 절기: 동지, 소한, 대한
-  if (month <= 2 && (solarTerm === '동지' || solarTerm === '소한' || solarTerm === '대한')) {
-    sajuYear = year - 1;
+function getSolarMonthIndexAt(instant: Date): number {
+  const term = getPreviousSolarTermByInstant(instant);
+  if (!term) {
+    throw new Error('절기 데이터 범위(1900-2200)를 벗어난 출생일시입니다.');
   }
+  return getSolarTermMonthIndex(term.term);
+}
+
+/**
+ * 연주(年柱) 계산 — 입춘 절입 시각 기준
+ * 1~2월인데 아직 자월·축월(입춘 전)이면 전년도.
+ */
+function calculateYearPillar(instant: Date, monthIndex: number): Pillar {
+  const year = parseInt(formatInTimeZone(instant, SEOUL_TZ, 'yyyy'), 10);
+  const month = parseInt(formatInTimeZone(instant, SEOUL_TZ, 'M'), 10);
+  const sajuYear = month <= 2 && monthIndex >= 10 ? year - 1 : year;
 
   // 갑자(甲子)년 기준: 1984년, 1924년, 1864년...
-  // 60갑자 순환
-  const stemIndex = (sajuYear - 4) % 10;
-  const branchIndex = (sajuYear - 4) % 12;
+  const stemIndex = (((sajuYear - 4) % 10) + 10) % 10;
+  const branchIndex = (((sajuYear - 4) % 12) + 12) % 12;
 
   const stem = getHeavenlyStemByIndex(stemIndex);
   const branch = getEarthlyBranchByIndex(branchIndex);
@@ -202,10 +220,7 @@ function calculateYearPillar(date: Date): Pillar {
 /**
  * 월주(月柱) 계산
  */
-function calculateMonthPillar(date: Date, yearPillar: Pillar): Pillar {
-  const solarTerm = getCurrentSolarTerm(date);
-  const monthIndex = getSolarTermMonthIndex(solarTerm);
-
+function calculateMonthPillar(monthIndex: number, yearPillar: Pillar): Pillar {
   // 월지 계산: 인월부터 시작 (입춘)
   const branchIndex = (monthIndex + 2) % 12; // 인(寅)월부터
 
@@ -254,10 +269,10 @@ function calculateMonthPillar(date: Date, yearPillar: Pillar): Pillar {
 /**
  * 일주(日柱) 계산
  * 정확한 기준일: 1900년 1월 1일 = 갑술일(甲戌日) (만세력 원전 대조 완료)
- * 출생 순간을 대한민국 달력 일(Asia/Seoul)로 두고 기준일과의 일수 차를 쓴다(UTC 일수 나눗셈·서버 타임존 의존 방지).
+ * 경도 보정된 출생 순간을 지방평균시 달력 일로 두고 기준일과의 일수 차를 쓴다(UTC 일수 나눗셈·서버 타임존 의존 방지).
  */
 function calculateDayPillar(date: Date): Pillar {
-  const birthKoreaDateStr = formatInTimeZone(date, SEOUL_TZ, 'yyyy-MM-dd');
+  const birthKoreaDateStr = readLmt(date).ymd;
   const base = toDate('1900-01-01T12:00:00', { timeZone: SEOUL_TZ });
   const birth = toDate(`${birthKoreaDateStr}T12:00:00`, { timeZone: SEOUL_TZ });
   const diffDays = differenceInCalendarDays(birth, base);
@@ -280,27 +295,21 @@ function calculateDayPillar(date: Date): Pillar {
 }
 
 /**
- * 시주(時柱) 계산
+ * 시주(時柱) 계산 — 지방평균시 기준 2시간 단위
+ * 23시대(야자시)는 일주를 당일로 두되 시간(時干)은 다음날 자시의 천간을 쓴다(야자시·조자시 구분법).
+ * 당일 일간으로 23시 자시 천간을 내면 다음날 00시 자시와 같은 간지가 나와 틀린다.
  */
 function calculateHourPillar(date: Date, dayPillar: Pillar): Pillar {
-  const hours = parseInt(formatInTimeZone(date, SEOUL_TZ, 'H'), 10);
+  const hours = readLmt(date).hour;
 
-  // 시지 계산 (2시간 단위)
   // 23-01시: 자시, 01-03시: 축시, ...
-  let branchIndex: number;
-  if (hours >= 23 || hours < 1) {
-    branchIndex = 0; // 자
-  } else {
-    branchIndex = Math.floor((hours + 1) / 2);
-  }
+  const branchIndex = hours >= 23 ? 0 : Math.floor((hours + 1) / 2);
 
-  // 시간 계산: 일간에 따라 결정
-  const dayStem = getHeavenlyStemByIndex(
-    ['갑', '을', '병', '정', '무', '기', '경', '신', '임', '계'].indexOf(dayPillar.stem)
-  );
+  const dayStemIndex = ['갑', '을', '병', '정', '무', '기', '경', '신', '임', '계'].indexOf(dayPillar.stem);
+  const stemDayIndex = hours >= 23 ? (dayStemIndex + 1) % 10 : dayStemIndex;
 
-  // 시간 공식: (일간 × 2 + 시지) % 10
-  const stemIndex = (dayStem.index * 2 + branchIndex) % 10;
+  // 시간 공식: (일간 × 2 + 시지) % 10 — 갑기일 갑자시, 을경일 병자시 …
+  const stemIndex = (stemDayIndex * 2 + branchIndex) % 10;
 
   const stem = getHeavenlyStemByIndex(stemIndex);
   const branch = getEarthlyBranchByIndex(branchIndex);

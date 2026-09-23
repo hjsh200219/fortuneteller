@@ -1,0 +1,111 @@
+/**
+ * 사주 기둥 회귀 테스트 — 2026-09 수정분
+ *
+ * 각 사례는 수정 전 엔진에서 틀렸던 입력이다. 기대값은 JPL DE440s 절기·지방평균시(서울 -32분)로
+ * 독립 계산한 값(무작위·경계 22,792건 대조에서 불일치 0).
+ */
+
+import { calculateSaju } from '../src/lib/saju.js';
+import { calculateDaeUn } from '../src/lib/dae_un.js';
+import { SOLAR_TERMS_JIE } from '../src/data/solar_terms.js';
+import { analyzeWolUn } from '../src/lib/wol_un.js';
+import { analyzeWolun } from '../src/lib/wolun_analysis.js';
+import { getDayPillar } from '../src/lib/helpers.js';
+
+function pillars(date: string, time: string, gender: 'male' | 'female' = 'male'): string {
+  const s = calculateSaju(date, time, 'solar', false, gender, '서울');
+  return [s.year, s.month, s.day, s.hour].map((p) => p.stem + p.branch).join(' ');
+}
+
+describe('절입 경계 — 정밀 절기표(분 단위)로 연주·월주 결정', () => {
+  test('2026 입춘(02-04 05:02) 7분 전은 을사년 기축월', () => {
+    expect(pillars('2026-02-04', '04:55').split(' ').slice(0, 2)).toEqual(['을사', '기축']);
+  });
+  test('2026 입춘(02-04 05:02) 8분 후는 병오년 경인월', () => {
+    expect(pillars('2026-02-04', '05:10').split(' ').slice(0, 2)).toEqual(['병오', '경인']);
+  });
+  test('2002 입하(05-06 01:37) 17분 전은 아직 갑진월', () => {
+    expect(pillars('2002-05-06', '01:20').split(' ')[1]).toBe('갑진');
+  });
+});
+
+describe('야자시(23시대) 시간(時干)', () => {
+  test('23시대 시간은 다음날 자시 천간 — 같은 날 00시대와 달라야 한다', () => {
+    const late = pillars('2024-03-10', '23:45').split(' ');
+    const early = pillars('2024-03-10', '00:45').split(' ');
+    expect(late[2]).toBe(early[2]); // 일주는 당일 유지
+    expect(late[3]!.slice(1)).toBe('자');
+    expect(late[3]).not.toBe(early[3]);
+  });
+  test('다음날 00시대 자시와 같은 간지', () => {
+    const late = pillars('2024-03-10', '23:45').split(' ');
+    const nextEarly = pillars('2024-03-11', '00:45').split(' ');
+    expect(late[3]).toBe(nextEarly[3]);
+  });
+});
+
+describe('표준시·썸머타임 이력 — 지방평균시 읽기', () => {
+  test('1988-05-08 03:47(썸머타임 시작일) = 지방평균시 02:15 → 축시', () => {
+    expect(pillars('1988-05-08', '03:47', 'female').split(' ')[3]!.slice(1)).toBe('축');
+  });
+  test('1957(UTC+8:30) 09:30 = 지방평균시 09:28 → 사시', () => {
+    expect(pillars('1957-01-24', '09:30', 'female').split(' ')[3]!.slice(1)).toBe('사');
+  });
+  test('1900-01-01(소한 이전)도 계산된다 — 기해년 병자월', () => {
+    expect(pillars('1900-01-01', '12:00').split(' ').slice(0, 2)).toEqual(['기해', '병자']);
+  });
+});
+
+describe('대운 기산 — 12절(節)', () => {
+  test('12절에는 소한이 있고 소설(氣)은 없다', () => {
+    expect(SOLAR_TERMS_JIE).toContain('소한');
+    expect(SOLAR_TERMS_JIE).not.toContain('소설');
+  });
+  test('1986-11-20 10:00 남(병인년 순행): 다음 절 대설까지 17.4일 → 대운수 5, 첫 대운 경자', () => {
+    const s = calculateSaju('1986-11-20', '10:00', 'solar', false, 'male', '서울');
+    const first = calculateDaeUn(s)[0]!;
+    expect(first.startAge).toBe(5);
+    expect(first.stem + first.branch).toBe('경자');
+  });
+  test('2027-01-19 15:00 여(입춘 전 병오년 역행): 이전 절 소한까지 13.7일 → 대운수 4', () => {
+    const s = calculateSaju('2027-01-19', '15:00', 'solar', false, 'female', '서울');
+    expect(calculateDaeUn(s)[0]!.startAge).toBe(4);
+  });
+});
+
+describe('월운 — 양력 M월 = 그 달 절입 절의 월건', () => {
+  const base = calculateSaju('1986-11-20', '10:00', 'solar', false, 'male', '서울');
+  test('1950-2100 매달 15일 월주와 두 월운 모듈 간지가 같다', () => {
+    const mismatches: string[] = [];
+    for (let y = 1950; y <= 2100; y++) {
+      for (let m = 1; m <= 12; m++) {
+        const mm = String(m).padStart(2, '0');
+        const s = calculateSaju(`${y}-${mm}-15`, '12:00', 'solar', false, 'male', '서울');
+        const expected = s.month.stem + s.month.branch;
+        const a = analyzeWolUn(base, y, m);
+        const b = analyzeWolun(base, y, m);
+        if (a.stem + a.branch !== expected || b.monthStem + b.monthBranch !== expected) {
+          mismatches.push(`${y}-${mm}: ${expected} vs ${a.stem}${a.branch}/${b.monthStem}${b.monthBranch}`);
+        }
+      }
+    }
+    expect(mismatches).toEqual([]);
+  });
+});
+
+describe('일진 — getDayPillar 가 calculateSaju 일주와 같다', () => {
+  test('2000-2030 매달 1·15일 정오', () => {
+    const mismatches: string[] = [];
+    for (let y = 2000; y <= 2030; y++) {
+      for (let m = 1; m <= 12; m++) {
+        for (const d of [1, 15]) {
+          const ds = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+          const s = calculateSaju(ds, '12:00', 'solar', false, 'male', '서울');
+          const p = getDayPillar(new Date(`${ds}T12:00`));
+          if (p.stem + p.branch !== s.day.stem + s.day.branch) mismatches.push(ds);
+        }
+      }
+    }
+    expect(mismatches).toEqual([]);
+  });
+});

@@ -56,3 +56,5 @@ coverage/
 
 # 하네스 GC 작업 디렉토리
 _workspace/
+# 로컬 CLI 번들
+dist-cli/

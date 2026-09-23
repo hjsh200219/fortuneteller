@@ -2,7 +2,7 @@
  * KASI 앵커 검증 테스트
  *
  * 한국천문연구원 발표 절기 시각 데이터와 우리 알고리즘의 교차 검증
- * 허용 오차: +-5분 이내 (Jean Meeus 알고리즘 정밀도)
+ * 허용 오차: 1분 (JPL DE440s 생성 테이블, KASI 분 단위 공표값과 일치)
  */
 
 import { getSolarTermsForYear } from '../src/data/solar_terms.js';
@@ -22,11 +22,11 @@ interface KASIAnchor {
 const KASI_ANCHORS: KASIAnchor[] = [
   // 2025년 (KASI 천문력 2025)
   { year: 2025, term: '입춘', datetime: '2025-02-03T23:10:00+09:00', source: 'KASI 2025' },
-  { year: 2025, term: '우수', datetime: '2025-02-18T18:07:00+09:00', source: 'KASI 2025' },
-  { year: 2025, term: '경칩', datetime: '2025-03-05T16:07:00+09:00', source: 'KASI 2025' },
+  { year: 2025, term: '우수', datetime: '2025-02-18T19:06:00+09:00', source: 'KASI 2025' },
+  { year: 2025, term: '경칩', datetime: '2025-03-05T17:07:00+09:00', source: 'KASI 2025' },
   { year: 2025, term: '춘분', datetime: '2025-03-20T18:01:00+09:00', source: 'KASI 2025' },
   { year: 2025, term: '청명', datetime: '2025-04-04T21:48:00+09:00', source: 'KASI 2025' },
-  { year: 2025, term: '곡우', datetime: '2025-04-20T03:56:00+09:00', source: 'KASI 2025' },
+  { year: 2025, term: '곡우', datetime: '2025-04-20T04:56:00+09:00', source: 'KASI 2025' },
 
   // 2026년 (KASI 월력요항 2026)
   { year: 2026, term: '소한', datetime: '2026-01-05T17:23:00+09:00', source: 'KASI 2026' },
@@ -55,8 +55,8 @@ const KASI_ANCHORS: KASIAnchor[] = [
   { year: 2026, term: '동지', datetime: '2026-12-22T05:50:00+09:00', source: 'KASI 2026' },
 ];
 
-// 허용 오차: 60분 (Jean Meeus 알고리즘 근사 정밀도)
-const TOLERANCE_MS = 60 * 60 * 1000;
+// 허용 오차: 1분 (JPL DE440s 생성 테이블 — 분 단위 반올림 차이만 허용)
+const TOLERANCE_MS = 60 * 1000;
 
 /**
  * 절기 데이터에서 KASI 양력 날짜에 해당하는 절기를 찾는 함수
