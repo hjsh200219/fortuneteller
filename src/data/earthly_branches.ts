@@ -3,6 +3,7 @@
  * 12개의 지지와 관련 정보
  */
 
+import { JIJANGGAN_STRENGTH_DETAILED } from './jijanggan_strength_table.js';
 import type { EarthlyBranch, HeavenlyStem, WuXing, YinYang } from '../types/index.js';
 import { HEAVENLY_STEMS } from './heavenly_stems.js';
 
@@ -356,20 +357,14 @@ export const JI_JANG_GAN: Record<
     secondary?: HeavenlyStem; // 중기(中氣)
     residual?: HeavenlyStem; // 여기(餘氣)
   }
-> = {
-  자: { primary: '계' }, // 子: 계수만
-  축: { primary: '기', secondary: '신', residual: '계' }, // 丑: 기토, 신금, 계수
-  인: { primary: '갑', secondary: '병', residual: '무' }, // 寅: 갑목, 병화, 무토
-  묘: { primary: '을' }, // 卯: 을목만
-  진: { primary: '무', secondary: '계', residual: '을' }, // 辰: 정기 무토, 중기 계수, 여기 을목
-  사: { primary: '병', secondary: '경', residual: '무' }, // 巳: 정기 병화, 중기 경금, 여기 무토
-  오: { primary: '정', secondary: '기' }, // 午: 정화, 기토
-  미: { primary: '기', secondary: '을', residual: '정' }, // 未: 정기 기토, 중기 을목, 여기 정화
-  신: { primary: '경', secondary: '임', residual: '무' }, // 申: 경금, 임수, 무토
-  유: { primary: '신' }, // 酉: 신금만
-  술: { primary: '무', secondary: '정', residual: '신' }, // 戌: 정기 무토, 중기 정화, 여기 신금
-  해: { primary: '임', secondary: '갑' }, // 亥: 임수, 갑목
-};
+> = Object.fromEntries(
+  // 단일 출처: JIJANGGAN_STRENGTH_DETAILED(여기·중기·정기 순) — 두 표가 따로 놀면 격국·강약이 다른 지장간을 본다
+  (Object.entries(JIJANGGAN_STRENGTH_DETAILED) as [EarthlyBranch, { stem: HeavenlyStem }[]][]).map(([branch, phases]) => {
+    const primary = phases[phases.length - 1]!.stem;
+    if (phases.length === 3) return [branch, { primary, secondary: phases[1]!.stem, residual: phases[0]!.stem }];
+    return [branch, { primary, residual: phases[0]!.stem }];
+  })
+) as Record<EarthlyBranch, { primary: HeavenlyStem; secondary?: HeavenlyStem; residual?: HeavenlyStem }>;
 
 /**
  * 지장간 추출 - 지지에서 숨은 천간들을 모두 반환

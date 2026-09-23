@@ -59,7 +59,7 @@ export const JIJANGGAN_STRENGTH_DETAILED: Record<EarthlyBranch, JiJangGanStrengt
 
   // 신월 (申月): 입추 ~ 백로 (31일)
   신: [
-    { stem: '기', days: 7, strength: 23 }, // 여기 7일
+    { stem: '무', days: 7, strength: 23 }, // 여기 7일 (申 = 무·임·경)
     { stem: '임', days: 7, strength: 23 }, // 중기 7일
     { stem: '경', days: 17, strength: 54 }, // 정기 17일
   ],
