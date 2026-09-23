@@ -96,6 +96,8 @@ export interface SajuData {
     samHap?: { type: string | null; element: WuXing | null };
     samHyeong?: string[];
     yukHae?: [EarthlyBranch, EarthlyBranch][];
+    yukChung?: [EarthlyBranch, EarthlyBranch][];
+    yukHap?: { pair: [EarthlyBranch, EarthlyBranch]; element: WuXing }[];
     summary?: string;
   };
 

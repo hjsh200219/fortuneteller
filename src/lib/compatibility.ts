@@ -4,7 +4,15 @@
 
 import type { SajuData, CompatibilityAnalysis } from '../types/index.js';
 import { analyzeWuXingRelation } from '../data/wuxing.js';
-import type { TenGod } from '../types/index.js';
+import type { TenGod, HeavenlyStem, EarthlyBranch } from '../types/index.js';
+import { getFavorSets } from './luck_evaluation.js';
+
+/** 천간합(天干合) */
+const STEM_HAP: [HeavenlyStem, HeavenlyStem][] = [['갑', '기'], ['을', '경'], ['병', '신'], ['정', '임'], ['무', '계']];
+const BRANCH_HAP: [EarthlyBranch, EarthlyBranch][] = [['자', '축'], ['인', '해'], ['묘', '술'], ['진', '유'], ['사', '신'], ['오', '미']];
+const BRANCH_CHUNG: [EarthlyBranch, EarthlyBranch][] = [['자', '오'], ['축', '미'], ['인', '신'], ['묘', '유'], ['진', '술'], ['사', '해']];
+const BRANCH_WONJIN: [EarthlyBranch, EarthlyBranch][] = [['자', '미'], ['축', '오'], ['인', '유'], ['묘', '신'], ['진', '해'], ['사', '술']];
+const isPair = <T>(pairs: [T, T][], a: T, b: T) => pairs.some(([x, y]) => (x === a && y === b) || (x === b && y === a));
 
 /**
  * 두 사람의 사주 궁합 분석
@@ -112,6 +120,13 @@ function analyzeDayPillarCompatibility(
     score -= 10;
   }
 
+  // 일간 천간합 — 서로 끌리는 대표 신호
+  if (isPair(STEM_HAP, person1.day.stem, person2.day.stem)) score += 15;
+  // 일지(배우자궁)끼리 육합·충·원진
+  if (isPair(BRANCH_HAP, person1.day.branch, person2.day.branch)) score += 15;
+  if (isPair(BRANCH_CHUNG, person1.day.branch, person2.day.branch)) score -= 15;
+  if (isPair(BRANCH_WONJIN, person1.day.branch, person2.day.branch)) score -= 10;
+
   return {
     score: Math.max(0, Math.min(100, score)),
     description: score >= 70 ? '매우 좋은 궁합' : score >= 50 ? '보통 궁합' : '노력이 필요한 궁합',
@@ -125,36 +140,18 @@ function analyzeElementHarmony(
   person1: SajuData,
   person2: SajuData
 ): { harmony: number; description: string } {
+  // 용신 보완 — 상대 사주에 내 용신 오행이 넉넉하면(2 이상) 보완, 내 기신 오행이 상대의 강한 오행이면 부담
   let harmonyScore = 50;
-
-  // 각자의 강한 오행과 약한 오행 비교
-  const person1Strong = person1.dominantElements || [];
-  const person1Weak = person1.weakElements || [];
-  const person2Strong = person2.dominantElements || [];
-  const person2Weak = person2.weakElements || [];
-
-  // 서로의 부족한 부분을 채워주는지 확인
   let complementCount = 0;
   let conflictCount = 0;
-
-  person1Weak.forEach((element) => {
-    if (person2Strong.includes(element)) {
-      complementCount++;
-    }
-  });
-
-  person2Weak.forEach((element) => {
-    if (person1Strong.includes(element)) {
-      complementCount++;
-    }
-  });
-
-  // 같은 오행이 강한 경우 충돌 가능
-  person1Strong.forEach((element) => {
-    if (person2Strong.includes(element)) {
-      conflictCount++;
-    }
-  });
+  for (const [me, other] of [
+    [person1, person2],
+    [person2, person1],
+  ] as const) {
+    const { favorable, unfavorable } = getFavorSets(me);
+    if ((other.wuxingCount[favorable[0]!] ?? 0) >= 2) complementCount++;
+    if ((other.dominantElements ?? []).some((e) => unfavorable.includes(e))) conflictCount++;
+  }
 
   harmonyScore += complementCount * 15;
   harmonyScore -= conflictCount * 10;
@@ -162,9 +159,11 @@ function analyzeElementHarmony(
   return {
     harmony: Math.max(0, Math.min(100, harmonyScore)),
     description:
-      complementCount > 0
-        ? '서로의 부족한 점을 보완하는 좋은 관계입니다'
-        : '각자의 특성을 존중하는 것이 중요합니다',
+      complementCount === 2
+        ? '서로가 상대의 용신 오행을 넉넉히 갖고 있어 부족한 점을 채워 주는 관계입니다'
+        : complementCount === 1
+          ? '한쪽이 상대의 용신 오행을 넉넉히 갖고 있어 한 방향으로 채워 주는 관계입니다'
+          : '서로의 용신을 직접 채워 주지는 않아, 각자의 특성을 존중하는 것이 중요합니다',
   };
 }
 
@@ -174,7 +173,7 @@ function analyzeElementHarmony(
 function analyzeBranchRelation(
   person1: SajuData,
   person2: SajuData
-): { isHarmony: boolean; isConflict: boolean; description: string } {
+): { isHarmony: boolean; isConflict: boolean; harmonyCount: number; conflictCount: number; description: string } {
   // 간단한 지지 충극 판단
   const branches1 = [person1.year.branch, person1.month.branch, person1.day.branch, person1.hour.branch];
   const branches2 = [person2.year.branch, person2.month.branch, person2.day.branch, person2.hour.branch];
@@ -221,6 +220,8 @@ function analyzeBranchRelation(
   return {
     isHarmony: harmonyCount > 0,
     isConflict: conflictCount > 0,
+    harmonyCount,
+    conflictCount,
     description:
       harmonyCount > conflictCount
         ? '지지가 잘 어울립니다'
@@ -368,7 +369,7 @@ function analyzeTenGodsCompatibility(
 function calculateOverallScore(
   dayCompatibility: { score: number },
   elementHarmony: { harmony: number },
-  branchRelation: { isHarmony: boolean; isConflict: boolean },
+  branchRelation: { harmonyCount: number; conflictCount: number },
   tenGodsCompatibility: { score: number }
 ): number {
   let score = 0;
@@ -380,9 +381,7 @@ function calculateOverallScore(
   score += elementHarmony.harmony * 0.3;
 
   // 지지 관계 (20%)
-  let branchScore = 50;
-  if (branchRelation.isHarmony) branchScore = 80;
-  if (branchRelation.isConflict) branchScore = 30;
+  const branchScore = Math.max(20, Math.min(90, 50 + 15 * (branchRelation.harmonyCount - branchRelation.conflictCount)));
   score += branchScore * 0.2;
 
   // 십성 궁합 (15%)

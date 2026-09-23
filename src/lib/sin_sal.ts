@@ -199,7 +199,7 @@ export const SIN_SAL_DATA: Record<SinSal, Omit<SinSalInfo, 'sinSal'>> = {
   },
   won_jin_sal: {
     name: '원진살',
-    hanja: '元辰殺',
+    hanja: '怨嗔殺',
     type: 'unlucky',
     description: '원한과 적대 관계, 갈등과 대립',
     effects: [
@@ -249,151 +249,58 @@ const CHEON_EUL_GWI_IN_TABLE: Record<HeavenlyStem, EarthlyBranch[]> = {
   계: ['사', '묘'],
 };
 
+const BRANCH_ORDER: EarthlyBranch[] = ['자', '축', '인', '묘', '진', '사', '오', '미', '신', '유', '술', '해'];
+
+/** 삼합 그룹별 도화(桃花)·역마(驛馬)·화개(華蓋) 지지 */
+const SAMHAP_SINSAL: { group: EarthlyBranch[]; doHwa: EarthlyBranch; yeokMa: EarthlyBranch; hwaGae: EarthlyBranch }[] = [
+  { group: ['인', '오', '술'], doHwa: '묘', yeokMa: '신', hwaGae: '술' },
+  { group: ['사', '유', '축'], doHwa: '오', yeokMa: '해', hwaGae: '축' },
+  { group: ['신', '자', '진'], doHwa: '유', yeokMa: '인', hwaGae: '진' },
+  { group: ['해', '묘', '미'], doHwa: '자', yeokMa: '사', hwaGae: '미' },
+];
+
 /**
- * 도화살 판단 (지지 조합)
+ * 삼합 기준 신살 — 년지 또는 일지를 기준으로, 그 삼합의 대상 지지가 **다른 자리**에 있으면 성립
+ * branches 순서: [년지, 월지, 일지, 시지]
  */
-function checkDoHwaSal(branches: EarthlyBranch[]): boolean {
-  const branchSet = new Set(branches);
-
-  // 인오술 → 묘
-  if (
-    (branchSet.has('인') || branchSet.has('오') || branchSet.has('술')) &&
-    branchSet.has('묘')
-  ) {
-    return true;
+function checkSamHapSinSal(branches: EarthlyBranch[], kind: 'doHwa' | 'yeokMa' | 'hwaGae'): boolean {
+  for (const baseIndex of [0, 2]) {
+    const base = branches[baseIndex]!;
+    const rule = SAMHAP_SINSAL.find((r) => r.group.includes(base))!;
+    const target = rule[kind];
+    if (branches.some((b, i) => i !== baseIndex && b === target)) return true;
   }
-
-  // 사유축 → 오
-  if (
-    (branchSet.has('사') || branchSet.has('유') || branchSet.has('축')) &&
-    branchSet.has('오')
-  ) {
-    return true;
-  }
-
-  // 신자진 → 유
-  if (
-    (branchSet.has('신') || branchSet.has('자') || branchSet.has('진')) &&
-    branchSet.has('유')
-  ) {
-    return true;
-  }
-
-  // 해묘미 → 자
-  if (
-    (branchSet.has('해') || branchSet.has('묘') || branchSet.has('미')) &&
-    branchSet.has('자')
-  ) {
-    return true;
-  }
-
   return false;
 }
 
 /**
- * 역마살 판단 (지지 조합)
+ * 공망 — 일주가 속한 순(旬)에서 빠진 두 지지가 년·월·시지에 있으면 성립
+ * 순의 첫 지지 = 일지 − 일간 순번, 공망 = 그 앞 두 지지 (갑자순 → 술·해)
  */
-function checkYeokMaSal(branches: EarthlyBranch[]): boolean {
-  const branchSet = new Set(branches);
-
-  // 인오술일주 → 신
-  if (
-    (branchSet.has('인') || branchSet.has('오') || branchSet.has('술')) &&
-    branchSet.has('신')
-  ) {
-    return true;
-  }
-
-  // 사유축일주 → 해
-  if (
-    (branchSet.has('사') || branchSet.has('유') || branchSet.has('축')) &&
-    branchSet.has('해')
-  ) {
-    return true;
-  }
-
-  // 신자진일주 → 인
-  if (
-    (branchSet.has('신') || branchSet.has('자') || branchSet.has('진')) &&
-    branchSet.has('인')
-  ) {
-    return true;
-  }
-
-  // 해묘미일주 → 사
-  if (
-    (branchSet.has('해') || branchSet.has('묘') || branchSet.has('미')) &&
-    branchSet.has('사')
-  ) {
-    return true;
-  }
-
-  return false;
+function checkGongMang(dayStem: HeavenlyStem, dayBranch: EarthlyBranch, branches: EarthlyBranch[]): boolean {
+  const stemIndex = ['갑', '을', '병', '정', '무', '기', '경', '신', '임', '계'].indexOf(dayStem);
+  const start = (BRANCH_ORDER.indexOf(dayBranch) - stemIndex + 12) % 12;
+  const empty = [BRANCH_ORDER[(start + 10) % 12]!, BRANCH_ORDER[(start + 11) % 12]!];
+  return branches.some((b, i) => i !== 2 && empty.includes(b));
 }
 
-/**
- * 공망 판단 (일주 기준 60갑자 순환)
- */
-function checkGongMang(dayBranch: EarthlyBranch, branches: EarthlyBranch[]): boolean {
-  const gongMangTable: Record<EarthlyBranch, EarthlyBranch[]> = {
-    자: ['술', '해'],
-    축: ['술', '해'],
-    인: ['자', '축'],
-    묘: ['자', '축'],
-    진: ['인', '묘'],
-    사: ['인', '묘'],
-    오: ['진', '사'],
-    미: ['진', '사'],
-    신: ['오', '미'],
-    유: ['오', '미'],
-    술: ['신', '유'],
-    해: ['신', '유'],
-  };
-
-  const gongMangBranches = gongMangTable[dayBranch];
-  return branches.some((branch) => gongMangBranches.includes(branch));
+/** 짝 지지 표에 해당하는 쌍이 일지와 다른 자리, 또는 이웃한 두 기둥 사이에 있는지 */
+function hasPair(branches: EarthlyBranch[], pairs: [EarthlyBranch, EarthlyBranch][]): boolean {
+  const isPair = (a: EarthlyBranch, b: EarthlyBranch) => pairs.some(([x, y]) => (a === x && b === y) || (a === y && b === x));
+  const dayBranch = branches[2]!;
+  if (branches.some((b, i) => i !== 2 && isPair(dayBranch, b))) return true;
+  return [0, 1, 2].some((i) => isPair(branches[i]!, branches[i + 1]!));
 }
 
-/**
- * 화개살 판단 (지지 조합)
- */
-function checkHwaGaeSal(branches: EarthlyBranch[]): boolean {
-  const branchSet = new Set(branches);
+/** 원진(怨嗔) 짝 */
+const WON_JIN_PAIRS: [EarthlyBranch, EarthlyBranch][] = [
+  ['자', '미'], ['축', '오'], ['인', '유'], ['묘', '신'], ['진', '해'], ['사', '술'],
+];
 
-  // 인오술 → 술
-  if (
-    (branchSet.has('인') || branchSet.has('오') || branchSet.has('술')) &&
-    branchSet.has('술')
-  ) {
-    return true;
-  }
-
-  // 사유축 → 축
-  if (
-    (branchSet.has('사') || branchSet.has('유') || branchSet.has('축')) &&
-    branchSet.has('축')
-  ) {
-    return true;
-  }
-
-  // 신자진 → 진
-  if (
-    (branchSet.has('신') || branchSet.has('자') || branchSet.has('진')) &&
-    branchSet.has('진')
-  ) {
-    return true;
-  }
-
-  // 해묘미 → 미
-  if (
-    (branchSet.has('해') || branchSet.has('묘') || branchSet.has('미')) &&
-    branchSet.has('미')
-  ) {
-    return true;
-  }
-
-  return false;
-}
+/** 귀문관(鬼門關) 짝 */
+const GWI_MUN_PAIRS: [EarthlyBranch, EarthlyBranch][] = [
+  ['자', '유'], ['축', '오'], ['인', '미'], ['묘', '신'], ['진', '해'], ['사', '술'],
+];
 
 /**
  * 사주에서 신살 찾기
@@ -418,79 +325,36 @@ export function findSinSals(sajuData: SajuData): SinSal[] {
   }
 
   // 도화살 체크
-  if (checkDoHwaSal(branches)) {
+  if (checkSamHapSinSal(branches, 'doHwa')) {
     sinSals.push('do_hwa_sal');
   }
 
   // 역마살 체크
-  if (checkYeokMaSal(branches)) {
+  if (checkSamHapSinSal(branches, 'yeokMa')) {
     sinSals.push('yeok_ma_sal');
   }
 
   // 공망 체크
-  if (checkGongMang(dayBranch, branches)) {
+  if (checkGongMang(dayStem, dayBranch, branches)) {
     sinSals.push('gong_mang');
   }
 
   // 화개살 체크
-  if (checkHwaGaeSal(branches)) {
+  if (checkSamHapSinSal(branches, 'hwaGae')) {
     sinSals.push('hwa_gae_sal');
   }
 
-  // 원진살 체크 (간단한 판단)
-  if (checkWonJinSal(branches)) {
+  // 원진살 체크
+  if (hasPair(branches, WON_JIN_PAIRS)) {
     sinSals.push('won_jin_sal');
   }
 
-  // 귀문관살 체크 (간단한 판단)
-  if (checkGwiMunGwanSal(branches)) {
+  // 귀문관살 체크
+  if (hasPair(branches, GWI_MUN_PAIRS)) {
     sinSals.push('gwi_mun_gwan_sal');
   }
 
-  // 간단한 휴리스틱으로 다른 신살들도 추가 (실제 판단 로직은 더 복잡함)
-  // 여기서는 일부만 구현
-
   return sinSals;
-}
-
-/**
- * 원진살 체크 - 자오충, 묘유충 등 충돌 관계
- */
-function checkWonJinSal(branches: EarthlyBranch[]): boolean {
-  const branchSet = new Set(branches);
-
-  const chungPairs: [EarthlyBranch, EarthlyBranch][] = [
-    ['자', '오'],
-    ['축', '미'],
-    ['인', '신'],
-    ['묘', '유'],
-    ['진', '술'],
-    ['사', '해'],
-  ];
-
-  for (const [b1, b2] of chungPairs) {
-    if (branchSet.has(b1) && branchSet.has(b2)) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-/**
- * 귀문관살 체크 - 인, 신, 사, 해가 있을 때
- */
-function checkGwiMunGwanSal(branches: EarthlyBranch[]): boolean {
-  const branchSet = new Set(branches);
-  const gwiMunBranches: EarthlyBranch[] = ['인', '신', '사', '해'];
-
-  // 귀문관살 관련 지지가 2개 이상 있으면
-  let count = 0;
-  for (const branch of gwiMunBranches) {
-    if (branchSet.has(branch)) count++;
-  }
-
-  return count >= 2;
 }
 
 /**

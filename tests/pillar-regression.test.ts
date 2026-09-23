@@ -14,8 +14,9 @@ import { getDayPillar } from '../src/lib/helpers.js';
 import { convertCalendar } from '../src/lib/calendar.js';
 import { analyzeIljin } from '../src/lib/iljin_analysis.js';
 import { selectMonthCommandStem } from '../src/lib/gyeok_guk.js';
-import { extractJiJangGan, calculateJiJangGanStrength, checkWolRyeong } from '../src/data/earthly_branches.js';
+import { extractJiJangGan, calculateJiJangGanStrength, checkWolRyeong, analyzeBranchRelations } from '../src/data/earthly_branches.js';
 import type { SajuData } from '../src/types/index.js';
+import { findSinSals } from '../src/lib/sin_sal.js';
 
 function pillars(date: string, time: string, gender: 'male' | 'female' = 'male'): string {
   const s = calculateSaju(date, time, 'solar', false, gender, '서울');
@@ -178,5 +179,43 @@ describe('격국·강약 — 월령 기준', () => {
     const s = calculateSaju('1985-03-20', '12:00', 'solar', false, 'male', '서울');
     const same = [s.year.stem, s.month.stem, s.hour.stem].filter((st) => st === s.day.stem).length;
     expect(s.tenGodsDistribution!.비견).toBeGreaterThanOrEqual(same);
+  });
+});
+
+describe('신살 — 표준 짝·기준 지지', () => {
+  const withBranches = (dayStem: string, b: [string, string, string, string]) =>
+    ({
+      year: { stem: '갑', branch: b[0] },
+      month: { stem: '갑', branch: b[1] },
+      day: { stem: dayStem, branch: b[2] },
+      hour: { stem: '갑', branch: b[3] },
+    }) as unknown as SajuData;
+
+  test('원진은 충이 아니다 — 자·오(충)만 있으면 원진 아님, 자·미면 원진', () => {
+    expect(findSinSals(withBranches('갑', ['자', '인', '오', '진']))).not.toContain('won_jin_sal');
+    expect(findSinSals(withBranches('갑', ['인', '술', '자', '미']))).toContain('won_jin_sal');
+  });
+  test('공망은 일주의 순(旬)으로 — 정해일(갑신순)은 오·미, 신·유가 아니다', () => {
+    expect(findSinSals(withBranches('정', ['유', '인', '해', '진']))).not.toContain('gong_mang');
+    expect(findSinSals(withBranches('정', ['오', '인', '해', '진']))).toContain('gong_mang');
+  });
+  test('화개는 기준 자리를 빼고 본다 — 일지 술 하나만으로는 성립하지 않는다', () => {
+    expect(findSinSals(withBranches('갑', ['자', '묘', '술', '사']))).not.toContain('hwa_gae_sal');
+    expect(findSinSals(withBranches('갑', ['자', '묘', '오', '술']))).toContain('hwa_gae_sal');
+  });
+});
+
+describe('지지 관계 — 반합은 왕지 포함, 충·육합 표시', () => {
+  test('해·미(묘 없음)는 반합이 아니고 해·묘는 반합', () => {
+    expect(analyzeBranchRelations(['해', '진', '미', '축']).samHap.type).toBeNull();
+    expect(analyzeBranchRelations(['해', '진', '묘', '축']).samHap.type).toBe('반목국');
+  });
+  test('충·육합을 찾는다', () => {
+    const r = analyzeBranchRelations(['자', '오', '축', '진']);
+    expect(r.yukChung).toEqual([['자', '오']]);
+    expect(r.yukHap.map((h) => h.pair)).toEqual([['자', '축']]);
+  });
+  test('인·사 두 글자도 형', () => {
+    expect(analyzeBranchRelations(['인', '사', '자', '진']).samHyeong).toContain('무은지형 일부(인사)');
   });
 });

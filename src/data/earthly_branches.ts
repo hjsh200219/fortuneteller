@@ -185,25 +185,46 @@ export const SAM_HAP: Record<string, { branches: EarthlyBranch[]; element: WuXin
 };
 
 /**
- * 삼합 체크 함수
+ * 삼합 체크 — 세 글자가 다 있으면 삼합, 두 글자면 왕지(자·오·묘·유)가 낀 경우만 반합
+ * (생지+고지, 예: 인·술 은 반합으로 치지 않는다)
  */
 export function checkSamHap(branches: EarthlyBranch[]): { type: string | null; element: WuXing | null } {
   const branchSet = new Set(branches);
 
   for (const [type, data] of Object.entries(SAM_HAP)) {
-    const hasAll = data.branches.every((b) => branchSet.has(b));
-    if (hasAll) {
+    if (data.branches.every((b) => branchSet.has(b))) {
       return { type, element: data.element };
     }
-
-    // 부분 삼합 (2개만 있어도 약한 영향)
+  }
+  for (const [type, data] of Object.entries(SAM_HAP)) {
+    const wangJi = data.branches[1]!; // 가운데 = 왕지
     const count = data.branches.filter((b) => branchSet.has(b)).length;
-    if (count >= 2) {
+    if (count >= 2 && branchSet.has(wangJi)) {
       return { type: `반${type}`, element: data.element };
     }
   }
 
   return { type: null, element: null };
+}
+
+/** 육충(六沖) */
+export const YUK_CHUNG: [EarthlyBranch, EarthlyBranch][] = [
+  ['자', '오'], ['축', '미'], ['인', '신'], ['묘', '유'], ['진', '술'], ['사', '해'],
+];
+
+/** 육합(六合)과 합화 오행 */
+export const YUK_HAP: { pair: [EarthlyBranch, EarthlyBranch]; element: WuXing }[] = [
+  { pair: ['자', '축'], element: '토' },
+  { pair: ['인', '해'], element: '목' },
+  { pair: ['묘', '술'], element: '화' },
+  { pair: ['진', '유'], element: '금' },
+  { pair: ['사', '신'], element: '수' },
+  { pair: ['오', '미'], element: '화' },
+];
+
+function presentPairs<T extends { 0: EarthlyBranch; 1: EarthlyBranch }>(branches: EarthlyBranch[], pairs: T[]): T[] {
+  const set = new Set(branches);
+  return pairs.filter((p) => set.has(p[0]) && set.has(p[1]));
 }
 
 /**
@@ -226,15 +247,14 @@ export function checkSamHyeong(branches: EarthlyBranch[]): string[] {
   const branchSet = new Set(branches);
   const hyeongList: string[] = [];
 
-  // 무은지형 체크
-  if (branchSet.has('인') && branchSet.has('사') && branchSet.has('신')) {
-    hyeongList.push('무은지형(인사신)');
-  }
-
-  // 지세지형 체크
-  if (branchSet.has('축') && branchSet.has('술') && branchSet.has('미')) {
-    hyeongList.push('지세지형(축술미)');
-  }
+  // 삼형은 세 글자가 다 있으면 삼형, 두 글자만 있어도 그 두 글자 사이의 형으로 본다
+  const trio = (letters: EarthlyBranch[], name: string) => {
+    const present = letters.filter((b) => branchSet.has(b));
+    if (present.length === 3) hyeongList.push(`${name}(${letters.join('')})`);
+    else if (present.length === 2) hyeongList.push(`${name} 일부(${present.join('')})`);
+  };
+  trio(['인', '사', '신'], '무은지형');
+  trio(['축', '술', '미'], '지세지형');
 
   // 무례지형 체크
   if (branchSet.has('자') && branchSet.has('묘')) {
@@ -291,15 +311,25 @@ export function analyzeBranchRelations(branches: EarthlyBranch[]): {
   samHap: { type: string | null; element: WuXing | null };
   samHyeong: string[];
   yukHae: [EarthlyBranch, EarthlyBranch][];
+  yukChung: [EarthlyBranch, EarthlyBranch][];
+  yukHap: { pair: [EarthlyBranch, EarthlyBranch]; element: WuXing }[];
   summary: string;
 } {
   const samHap = checkSamHap(branches);
   const samHyeong = checkSamHyeong(branches);
   const yukHae = checkYukHae(branches);
+  const yukChung = presentPairs(branches, YUK_CHUNG);
+  const yukHap = YUK_HAP.filter(({ pair }) => branches.includes(pair[0]) && branches.includes(pair[1]));
 
   let summary = '';
   if (samHap.type) {
     summary += `${samHap.type}이 형성되어 ${samHap.element} 기운이 강화됩니다. `;
+  }
+  if (yukHap.length > 0) {
+    summary += `${yukHap.map(({ pair, element }) => `${pair.join('')}합(${element})`).join(', ')} 육합이 있어 서로 끌어당깁니다. `;
+  }
+  if (yukChung.length > 0) {
+    summary += `${yukChung.map(([a, b]) => `${a}${b}`).join(', ')} 충이 있어 변동·이동이 잦을 수 있습니다. `;
   }
   if (samHyeong.length > 0) {
     summary += `${samHyeong.join(', ')} 형벌 관계가 있어 갈등이 있을 수 있습니다. `;
@@ -313,7 +343,7 @@ export function analyzeBranchRelations(branches: EarthlyBranch[]): {
     summary = '특별한 지지 관계가 없습니다.';
   }
 
-  return { samHap, samHyeong, yukHae, summary };
+  return { samHap, samHyeong, yukHae, yukChung, yukHap, summary: summary.trim() };
 }
 
 /**
