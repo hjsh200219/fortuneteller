@@ -13,7 +13,7 @@ const toolSchemaFactories: Record<string, () => Tool> = {
   analyze_saju: () => ({
     name: 'analyze_saju',
     description:
-      '사주 분석 통합 (basic/fortune/yongsin/school_compare/yongsin_method). 호출 전 사용자에게 이름(한글)·한자(선택)·양력/음력·생년월일시·윤달(음력 시)·성별·태어난 시군구를 확인할 것. 대화형 상세 해석 문장은 docs/references/interpretation-guide.md의 6항목 구조를 따른다.',
+      '사주 분석 통합 (basic/fortune/yongsin/school_compare/yongsin_method/relations). 호출 전 사용자에게 이름(한글)·한자(선택)·양력/음력·생년월일시·윤달(음력 시)·성별·태어난 시군구를 확인할 것. 대화형 상세 해석 문장은 docs/references/interpretation-guide.md의 6항목 구조를 따른다.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -29,8 +29,9 @@ const toolSchemaFactories: Record<string, () => Tool> = {
         gender: { type: 'string', enum: ['male', 'female'] },
         analysisType: {
           type: 'string',
-          enum: ['basic', 'fortune', 'yongsin', 'school_compare', 'yongsin_method'],
-          description: 'basic:사주계산 | fortune:운세 | yongsin:용신 | school_compare:유파비교 | yongsin_method:용신방법론',
+          enum: ['basic', 'fortune', 'yongsin', 'school_compare', 'yongsin_method', 'relations'],
+          description:
+            'basic:사주계산 | fortune:운세 | yongsin:용신 | school_compare:유파비교 | yongsin_method:용신방법론 | relations:기둥 사이 생극·합충형파해',
         },
         fortuneType: {
           type: 'string',
@@ -46,6 +47,10 @@ const toolSchemaFactories: Record<string, () => Tool> = {
           type: 'string',
           enum: ['strength', 'seasonal', 'mediation', 'disease'],
           description: 'yongsin_method용 (strength/seasonal/mediation/disease)',
+        },
+        targetYear: {
+          type: 'number',
+          description: 'relations용(선택) — 그해 대운·세운이 원국과 맺는 관계까지 본다',
         },
       },
       required: ['birthDate', 'birthTime', 'gender', 'analysisType'],

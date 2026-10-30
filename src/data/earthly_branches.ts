@@ -305,6 +305,11 @@ export function checkYukHae(branches: EarthlyBranch[]): [EarthlyBranch, EarthlyB
   return haeList;
 }
 
+/** 육파(六破) */
+export const YUK_PA: [EarthlyBranch, EarthlyBranch][] = [
+  ['자', '유'], ['축', '진'], ['인', '해'], ['묘', '오'], ['사', '신'], ['술', '미'],
+];
+
 /**
  * 지지 관계 종합 분석
  */
@@ -312,6 +317,7 @@ export function analyzeBranchRelations(branches: EarthlyBranch[]): {
   samHap: { type: string | null; element: WuXing | null };
   samHyeong: string[];
   yukHae: [EarthlyBranch, EarthlyBranch][];
+  yukPa: [EarthlyBranch, EarthlyBranch][];
   yukChung: [EarthlyBranch, EarthlyBranch][];
   yukHap: { pair: [EarthlyBranch, EarthlyBranch]; element: WuXing }[];
   summary: string;
@@ -319,6 +325,7 @@ export function analyzeBranchRelations(branches: EarthlyBranch[]): {
   const samHap = checkSamHap(branches);
   const samHyeong = checkSamHyeong(branches);
   const yukHae = checkYukHae(branches);
+  const yukPa = presentPairs(branches, YUK_PA);
   const yukChung = presentPairs(branches, YUK_CHUNG);
   const yukHap = YUK_HAP.filter(({ pair }) => branches.includes(pair[0]) && branches.includes(pair[1]));
 
@@ -337,14 +344,17 @@ export function analyzeBranchRelations(branches: EarthlyBranch[]): {
   }
   if (yukHae.length > 0) {
     const haeStr = yukHae.map(([a, b]) => `${a}${b}`).join(', ');
-    summary += `${haeStr} 해 관계가 있어 서로 방해할 수 있습니다.`;
+    summary += `${haeStr} 해 관계가 있어 서로 방해할 수 있습니다. `;
+  }
+  if (yukPa.length > 0) {
+    summary += `${yukPa.map(([a, b]) => `${a}${b}`).join(', ')} 파 관계가 있어 일이 어긋나거나 깨지기 쉽습니다.`;
   }
 
   if (!summary) {
     summary = '특별한 지지 관계가 없습니다.';
   }
 
-  return { samHap, samHyeong, yukHae, yukChung, yukHap, summary: summary.trim() };
+  return { samHap, samHyeong, yukHae, yukPa, yukChung, yukHap, summary: summary.trim() };
 }
 
 /**

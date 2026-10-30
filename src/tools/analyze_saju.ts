@@ -11,13 +11,15 @@ import { selectYongSin as selectYongSinOrig } from '../lib/yong_sin.js';
 import { SchoolComparator } from '../lib/school_comparator.js';
 import { selectYongSin } from '../lib/yongsin/selector.js';
 import { InterpretationSettings } from '../lib/interpretation_settings.js';
+import { analyzePillarRelations } from '../lib/pillar_relations.js';
 
 export type AnalysisType = 
   | 'basic'           // 기본 사주팔자 계산
   | 'fortune'         // 운세 분석
   | 'yongsin'         // 용신 분석
   | 'school_compare'  // 유파 비교
-  | 'yongsin_method'; // 용신 방법론
+  | 'yongsin_method'  // 용신 방법론
+  | 'relations';      // 생극·합충형파해
 
 export interface AnalyzeSajuArgs {
   birthDate: string;
@@ -37,6 +39,9 @@ export interface AnalyzeSajuArgs {
   
   // yongsin_method용
   method?: 'strength' | 'seasonal' | 'mediation' | 'disease';
+
+  // relations용 — 그해 대운·세운까지 원국과 대조
+  targetYear?: number;
 }
 
 export async function handleAnalyzeSaju(args: AnalyzeSajuArgs): Promise<string> {
@@ -51,6 +56,7 @@ export async function handleAnalyzeSaju(args: AnalyzeSajuArgs): Promise<string> 
     fortuneType,
     schools,
     method,
+    targetYear,
   } = args;
 
   // 사주 계산
@@ -88,6 +94,9 @@ export async function handleAnalyzeSaju(args: AnalyzeSajuArgs): Promise<string> 
       const yongsinResult = selectYongSin(sajuData, method as YongSinMethod);
       return JSON.stringify(yongsinResult);
     }
+
+    case 'relations':
+      return JSON.stringify(analyzePillarRelations(sajuData, targetYear));
 
     default:
       throw new Error(`알 수 없는 analysisType: ${analysisType}`);

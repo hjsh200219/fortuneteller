@@ -293,12 +293,12 @@ function hasPair(branches: EarthlyBranch[], pairs: [EarthlyBranch, EarthlyBranch
 }
 
 /** 원진(怨嗔) 짝 */
-const WON_JIN_PAIRS: [EarthlyBranch, EarthlyBranch][] = [
+export const WON_JIN_PAIRS: [EarthlyBranch, EarthlyBranch][] = [
   ['자', '미'], ['축', '오'], ['인', '유'], ['묘', '신'], ['진', '해'], ['사', '술'],
 ];
 
 /** 귀문관(鬼門關) 짝 */
-const GWI_MUN_PAIRS: [EarthlyBranch, EarthlyBranch][] = [
+export const GWI_MUN_PAIRS: [EarthlyBranch, EarthlyBranch][] = [
   ['자', '유'], ['축', '오'], ['인', '미'], ['묘', '신'], ['진', '해'], ['사', '술'],
 ];
 
